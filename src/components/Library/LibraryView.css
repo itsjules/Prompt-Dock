@@ -10,6 +10,24 @@
     padding-bottom: 2rem;
 }
 
+/* Custom Scrollbar for dark theme */
+.library-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.library-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.library-content::-webkit-scrollbar-thumb {
+    background: #3c3f46;
+    border-radius: 3px;
+}
+
+.library-content::-webkit-scrollbar-thumb:hover {
+    background: #4c5058;
+}
+
 .prompts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -21,8 +39,8 @@
     justify-content: center;
     align-items: center;
     height: 200px;
-    color: #888;
-    background: #f9f9f9;
-    border-radius: 8px;
-    border: 2px dashed #eee;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-md);
+    border: 2px dashed var(--border-color);
 }
