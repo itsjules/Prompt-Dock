@@ -19,7 +19,8 @@ function createWindow() {
     });
 
     // Load the app
-    if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+    const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
+    if (isDev) {
         mainWindow.loadURL('http://localhost:5173');
         mainWindow.webContents.openDevTools();
     } else {

@@ -1,0 +1,76 @@
+.block-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-left-width: 4px;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s;
+}
+
+.block-item:hover {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.block-header {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.block-drag-handle {
+    cursor: grab;
+    padding-right: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.block-type {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #444;
+    flex: 1;
+}
+
+.block-delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+}
+
+.block-delete-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #cc3333;
+}
+
+.block-content-area {
+    padding: 0.5rem;
+}
+
+.block-textarea {
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 0.5rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    resize: vertical;
+    outline: none;
+    background-color: #fafafa;
+    min-height: 60px;
+}
+
+.block-textarea:focus {
+    background-color: #fff;
+    border-color: #e0e0e0;
+}

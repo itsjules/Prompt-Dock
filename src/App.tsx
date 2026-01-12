@@ -1,26 +1,28 @@
-import { useState } from 'react';
 import { useStorePersistence } from './hooks/useStorePersistence';
+import { useUIStore } from './stores/useUIStore';
+import { Layout } from './components/Layout';
+import { LibraryView } from './components/Library/LibraryView';
+import { BuilderView } from './components/Builder/BuilderView';
 import './App.css';
 
 function App() {
-    const [count, setCount] = useState(0);
-
     // Initialize store persistence
     useStorePersistence();
 
+    const activeView = useUIStore((state) => state.activeView);
+
     return (
-        <div className="App">
-            <header className="App-header">
-                <h1>PromptDock</h1>
-                <p>Modular Prompt Building Tool</p>
-                <button onClick={() => setCount((count) => count + 1)}>
-                    Count: {count}
-                </button>
-                <p className="info">
-                    Press <kbd>Ctrl+Shift+P</kbd> (or <kbd>Cmd+Shift+P</kbd> on Mac) to toggle this window
-                </p>
-            </header>
-        </div>
+        <Layout>
+            {activeView === 'home' && <LibraryView />}
+            {activeView === 'library' && <LibraryView />}
+            {activeView === 'builder' && <BuilderView />}
+            {activeView === 'settings' && (
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                    <h2>Settings</h2>
+                    <p>Coming soon in Phase 3...</p>
+                </div>
+            )}
+        </Layout>
     );
 }
 

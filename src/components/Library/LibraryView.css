@@ -1,0 +1,28 @@
+.library-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.library-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 2rem;
+}
+
+.prompts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.empty-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: #888;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 2px dashed #eee;
+}

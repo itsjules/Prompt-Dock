@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron . --dev\"",
     "electron:build": "npm run build && electron-builder",
     "type-check": "tsc -b",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "fuse.js": "^7.0.0",
+    "lucide-react": "^0.562.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "uuid": "^11.0.3",
