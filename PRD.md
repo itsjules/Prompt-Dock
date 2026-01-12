@@ -2,14 +2,15 @@
 *A Modular Prompt Building Desktop Tool*
 
 **Author:** Julia Podlipensky  
-**PRDVersion:** v1.0 
-**Reference:** Concept proposal slides 
+**PRDVersion:** v1.1 
+**Reference:** Concept proposal slides + PRD Co-Pilot
 
 ---
 
 ## Short Pitch
-PromptDock is a **local, cross-platform desktop application** that allows students to **create, reuse, and assemble AI prompts** through modular building blocks.  
-It is designed for **speed, clarity, and everyday usability**, especially for non-developers, and is accessible instantly via a **global keyboard shortcut**.
+PromptDock is a local, cross-platform desktop application that enables students and non-developers to create, reuse, and assemble AI prompts using modular, human-readable building blocks.
+
+Designed for speed, clarity, and everyday use, PromptDock is instantly accessible via a global keyboard shortcut and works with any AI tool through simple copy-to-clipboard output. It is local-first, private by default, and intentionally avoids “prompt engineering” complexity.
 
 ---
 
@@ -25,6 +26,7 @@ Observed in student work and discussions:
 - effective prompts are reused via long searches through old chats
 - new tasks still require rewriting prompts from scratch
 - learning new prompting techniques increases fragmentation
+- Reusing roles, styles, or output formats requires manual copy-paste from multiple sources
 
 **Result**
 - broken focus
@@ -37,11 +39,16 @@ Observed in student work and discussions:
 ### Solution
 PromptDock provides:
 - a **central, local prompt library**
-- **modular prompt blocks** (Role, Task, Context, Output, Style)
+- **modular prompt blocks** (Role, Task, Context, Output, Style & Constraints)
 - **instant access via global hotkey**
 - **copy-to-clipboard output** usable in any AI tool
 
-The tool is local-first, private, and optimized for fast daily use.
+Prompts are built interactively from reusable “Lego-like” blocks, enabling:
+- Faster prompt creation without starting from zero
+- Consistent structure across different tasks
+- Easy reuse, iteration, and experimentation
+
+The tool is **local-first, private, and optimized for fast, daily workflows**.
 
 ---
 
@@ -52,19 +59,28 @@ The tool is local-first, private, and optimized for fast daily use.
 ---
 
 ### Primary Use Cases
-- Quickly reuse a successful prompt
-- Build a new prompt from reusable blocks
-- Save and tag new prompting techniques learned in class
-- Switch between task contexts (e.g. Coding, Writing, Research)
-- Find prompts via fuzzy search instead of folder navigation
+- Quickly reuse a prompt that worked well before  
+- Assemble a new prompt from reusable blocks  
+- Save and organize prompting patterns learned in class  
+- Switch between task contexts (e.g. Coding, Research, Writing)  
+- Find prompts via fuzzy search instead of folder navigation  
+
+---
+
+### North-Star Metric
+
+**Median time from hotkey press → prompt copied to clipboard**
+
+(Success = reduced context-switching friction)
 
 ---
 
 ### Non-Goals (V1)
 - AI-generated or AI-optimized prompts
 - Cloud sync or team collaboration
-- Browser-only implementation
+- Browser extensions or web-only versions  
 - Voice or vision-based input
+- Advanced context capture (screen / computer vision)  
 
 ---
 
@@ -73,6 +89,7 @@ The tool is local-first, private, and optimized for fast daily use.
 ### Experience Principles
 - Speed over configuration
 - Human-readable language (no “prompt engineering” jargon)
+- **Guided tool**, not a developer dashboard
 - Local and private by default
 
 ---
@@ -85,12 +102,16 @@ The tool is local-first, private, and optimized for fast daily use.
 ---
 
 ### High-Level User Journey
-1. User presses global hotkey  
-2. Overlay opens instantly  
-3. User searches or browses prompts/blocks  
-4. Prompt is assembled or selected  
-5. Prompt is copied to clipboard  
-6. User pastes into AI tool of choice  
+1. User presses global keyboard shortcut  
+2. Small overlay opens instantly at cursor position  
+3. User sees:
+   - Current task context  
+   - Fuzzy search  
+   - Favorites, recents, collections  
+4. User selects an existing prompt or starts building one modularly  
+5. Live preview updates in real time  
+6. User copies prompt to clipboard  
+7. User pastes prompt into AI tool of choice  
 
 ---
 
@@ -103,10 +124,11 @@ The tool is local-first, private, and optimized for fast daily use.
 - Overlay window (always-on-top)
 - Prompt library (create, edit, delete)
 - Modular prompt builder
-- Fuzzy search
+- Fuzzy search across prompts and blocks 
 - Favorites and recents
 - Local-only storage
-- Copy-to-clipboard
+- One-click copy to clipboard
+
 
 **P1 Enhancements**
 - Prompt feedback (star rating or thumbs up)
@@ -115,21 +137,26 @@ The tool is local-first, private, and optimized for fast daily use.
   - topic
   - prompt technique
 - Multiple library views (list / grouped)
+- **Related Prompts & Derivations View**
+  - Optional secondary view accessible from a prompt or template
+  - Shows prompts **derived from the same template** or **sharing common blocks**
+  - Indicates relationship type (e.g. *“derived from template”*, *“shares Actor + Output blocks”*)
 
 ---
 
 ### Out of Scope (V1)
-- Screen or computer-vision context capture
-- Voice input
-- Cloud sync or multi-device support
-- Authentication or accounts
+- Cloud sync or multi-device support  
+- Accounts or authentication  
+- Voice-based prompt building  
+- AI-assisted prompt improvement  
+- Screen or computer-vision context capture 
 
 ---
 
 ### Assumptions & Risks
 - Users operate on a single device in V1
-- Prompt libraries remain small to medium sized
 - OS-level hotkeys are stable across macOS and Windows
+- Performance expectations are high due to instant-access positioning  
 
 ---
 
@@ -160,22 +187,21 @@ The tool is local-first, private, and optimized for fast daily use.
 - **Zustand** — global UI and builder state
 - **Zod** — schema validation and safe data evolution
 - **Fuse.js** — fuzzy search across prompts and blocks
-- Local JSON storage (optional SQLite later)
-
+- Local JSON storage (SQLite considered post-V1) 
 ---
 
 ## 5) Data Model (Conceptual)
 
 ### Prompt
-- `id`
-- `title`
-- `description`
-- `blocks[]` (ordered)
-- `tags` (style, topic, technique)
-- `rating` (optional)
-- `usageCount`
-- `createdAt`
-- `updatedAt`
+- `id`  
+- `title`  
+- `description`  
+- `blocks[]` (ordered)  
+- `tags` (style, topic, technique)  
+- `rating` (optional)  
+- `usageCount`  
+- `createdAt`  
+- `updatedAt`  
 
 ---
 
@@ -203,10 +229,10 @@ The tool is local-first, private, and optimized for fast daily use.
 As a user, I want to open the prompt tool instantly via a hotkey, so I don’t break my workflow.
 
 **Acceptance Criteria**
-- Configurable global keyboard shortcut
-- Overlay opens above all applications
-- ESC closes overlay
-- No visible delay
+- Configurable global keyboard shortcut  
+- Overlay opens above all applications  
+- ESC closes overlay  
+- No perceptible delay 
 
 ---
 
@@ -216,9 +242,12 @@ As a user, I want to open the prompt tool instantly via a hotkey, so I don’t b
 As a user, I want to find prompts even if I don’t remember their exact name.
 
 **Acceptance Criteria**
-- Fuzzy search across titles, tags, and block content
-- Additional Containers of blocks by recent, favorites, collections
-- Filters by style, topic, technique
+- Fuzzy search across titles, tags, and block content  
+- Views for:
+  - Favorites  
+  - Recents  
+  - Collections  
+- Filter by style, topic, and technique 
 
 ---
 
@@ -239,12 +268,12 @@ As a user, I want to build prompts from reusable blocks instead of starting from
 ### Module 4 — Feedback & Reuse Signals (P1)
 
 **User Story**  
-As a user, I want to mark prompts that worked well so I can find them again.
+As a user, I want to mark prompts that worked well so I can easily reuse them.
 
 **Acceptance Criteria**
-- Star or thumbs-up rating
-- Search/filter by rating
-- Usage count tracked per prompt
+- Star or thumbs-up rating  
+- Filter and sort by rating  
+- Usage count tracked per prompt  
 
 ---
 
@@ -264,7 +293,7 @@ As a learner, I want to understand how prompts are derived or related.
 ## 7) Information Architecture & Navigation
 
 ### Main Views
-- Overlay Home (search, favorites, recents)
+- Overlay Home (search, favorites, recents, collections)
 - Prompt Builder
 - Prompt Library
 - Settings
@@ -272,25 +301,24 @@ As a learner, I want to understand how prompts are derived or related.
 ---
 
 ### Navigation Model
-- Hotkey opens overlay
-- Search-first interaction
-- Role/task context filters results
-- Builder opens inline
+- Hotkey-first entry point  
+- Search as primary interaction  
+- Context (role / task) influences results  
+- Builder opens inline without full navigation jumps  
 
 ---
 
 ## 8) Quality & Testing
 
 ### Functional Testing
-- Hotkey works across applications
-- Clipboard copy reliability
-- Search accuracy and speed
-- Prompt persistence across restarts
+- Global hotkey reliability across applications  
+- Clipboard copy success rate  
+- Search performance and accuracy  
+- Prompt persistence across restarts  
 
 ---
 
 ### UX Testing
-- Keyboard-only flow
 - First-time user clarity
 - Time-to-copy measurement
 
