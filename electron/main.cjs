@@ -6,10 +6,10 @@ let mainWindow = null;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 900,
-        height: 700,
+        width: 1200,
+        height: 800,
         show: false, // Start hidden
-        alwaysOnTop: true,
+        alwaysOnTop: false,
         frame: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.cjs'),
