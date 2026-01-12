@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import Fuse from 'fuse.js';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useUIStore } from '../../stores/useUIStore';
+import { useBuilderStore } from '../../stores/useBuilderStore';
 import { PromptCard } from './PromptCard';
 import { SearchBar } from './SearchBar';
 import './LibraryView.css';
@@ -9,6 +10,7 @@ import './LibraryView.css';
 export const LibraryView = () => {
     const { getAllPrompts } = usePromptStore();
     const { searchQuery, setActiveView } = useUIStore();
+    const { loadPrompt } = useBuilderStore();
 
     // Get all prompts from store
     const prompts = getAllPrompts();
@@ -33,11 +35,12 @@ export const LibraryView = () => {
         return fuse.search(searchQuery).map(result => result.item);
     }, [fuse, searchQuery, prompts]);
 
-    const handleUsePrompt = () => {
-        // In the future, this would load the prompt into the builder
-        // and switch to builder view.
-        // For now, just switch view.
-        setActiveView('builder');
+    const handleUsePrompt = (promptId: string) => {
+        const prompt = prompts.find(p => p.id === promptId);
+        if (prompt) {
+            loadPrompt(prompt);
+            setActiveView('builder');
+        }
     };
 
     return (
@@ -55,7 +58,7 @@ export const LibraryView = () => {
                             <PromptCard
                                 key={prompt.id}
                                 prompt={prompt}
-                                onUse={handleUsePrompt}
+                                onUse={() => handleUsePrompt(prompt.id)}
                             />
                         ))}
                     </div>

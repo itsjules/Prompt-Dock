@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight } from 'lucide-react';
+import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2 } from 'lucide-react';
 import { useBlockStore } from '../../stores/useBlockStore';
+import { useBuilderStore } from '../../stores/useBuilderStore';
+import { usePromptStore } from '../../stores/usePromptStore';
 import { BlockComponent } from './Block';
 import { BlockType } from '../../schemas/block.schema';
+import { MOCK_PRESETS } from '../../constants/presets';
 import './BuilderView.css';
 
 const BLOCK_TYPES: BlockType[] = ['Role', 'Task', 'Context', 'Output', 'Style', 'Constraints'];
@@ -17,32 +20,27 @@ const TYPE_ICONS: Record<BlockType, React.ElementType> = {
     Constraints: ShieldAlert,
 };
 
-// Mock data for the "Picker" pane to simulate the "Collection" feel from the sketch
-const MOCK_PRESETS: Record<BlockType, string[]> = {
-    Role: ['UX Expert', 'Senior Developer', 'Creative Writer', 'Data Analyst'],
-    Task: ['Analyze Data', 'Write Documentation', 'Debug Code', 'Brainstorm Ideas'],
-    Context: ['Technical Audience', 'Beginner Friendly', 'Executive Summary'],
-    Output: ['Markdown Table', 'JSON Format', 'Bullet Points'],
-    Style: ['Professional', 'Casual', 'Socratic', 'Concise'],
-    Constraints: ['No Jargon', 'Under 500 words', 'Use active voice'],
-};
-
 export const BuilderView = () => {
     const [selectedCategory, setSelectedCategory] = useState<BlockType>('Role');
     const [pickerSearch, setPickerSearch] = useState('');
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-    // We keep track of the block IDs in order for this specific prompt being built
-    const [blockIds, setBlockIds] = useState<string[]>([]);
+    // New state for inline naming
+    const [isNaming, setIsNaming] = useState(false);
+    const [tempName, setTempName] = useState('New Prompt');
 
+    // Global Stores
+    const { activePromptId, currentBlockIds, addBlockId, removeBlockId, clear: clearBuilder } = useBuilderStore();
     const { addBlock, updateBlock, deleteBlock } = useBlockStore();
     const blocksMap = useBlockStore(state => state.blocks);
+    const { addPrompt, updatePrompt, getPrompt } = usePromptStore();
 
     const handleAddBlock = (type: BlockType, content: string = '') => {
         const id = addBlock({
             type,
             content,
         });
-        setBlockIds([...blockIds, id]);
+        addBlockId(id);
     };
 
     const handleUpdateBlock = (id: string, content: string) => {
@@ -50,18 +48,19 @@ export const BuilderView = () => {
     };
 
     const handleDeleteBlock = (id: string) => {
+        // Remove from builder list
+        removeBlockId(id);
         deleteBlock(id);
-        setBlockIds(blockIds.filter(bId => bId !== id));
     };
 
     const handleClear = () => {
         if (confirm('Are you sure you want to clear all blocks?')) {
-            blockIds.forEach(id => deleteBlock(id));
-            setBlockIds([]);
+            clearBuilder();
+            setIsNaming(false);
         }
     };
 
-    const livePreview = blockIds
+    const livePreview = currentBlockIds
         .map(id => blocksMap[id])
         .filter(Boolean)
         .map(block => block.content)
@@ -70,6 +69,75 @@ export const BuilderView = () => {
 
     const handleCopy = () => {
         navigator.clipboard.writeText(livePreview);
+        // Optional: Could add copy feedback here too
+    };
+
+    const handleSaveClick = async () => {
+        if (currentBlockIds.length === 0) {
+            alert('Cannot save an empty prompt.');
+            return;
+        }
+
+        if (saveStatus !== 'idle') return;
+
+        if (activePromptId) {
+            // Existing prompt - save immediately
+            performSave();
+        } else {
+            // New prompt - show naming input
+            setTempName('New Prompt');
+            setIsNaming(true);
+        }
+    };
+
+    const performSave = async (nameOverride?: string) => {
+        try {
+            setSaveStatus('saving');
+            // Simulate minimal delay for UX
+            await new Promise(resolve => setTimeout(resolve, 600));
+
+            if (activePromptId) {
+                updatePrompt(activePromptId, {
+                    blocks: currentBlockIds,
+                });
+                finalizeSave();
+            } else {
+                // Creating new
+                const title = nameOverride || tempName;
+                if (!title.trim()) {
+                    alert('Please enter a valid name.');
+                    setSaveStatus('idle');
+                    return;
+                }
+
+                const newId = addPrompt({
+                    title,
+                    blocks: currentBlockIds,
+                    tags: { style: [], topic: [], technique: [] }
+                });
+
+                const newPrompt = getPrompt(newId);
+                if (newPrompt) {
+                    useBuilderStore.getState().loadPrompt(newPrompt);
+                    finalizeSave();
+                    setIsNaming(false);
+                } else {
+                    console.error('Failed to retrieve new prompt immediately.');
+                    setSaveStatus('idle');
+                }
+            }
+        } catch (error: any) {
+            console.error('Error in handleSave:', error);
+            setSaveStatus('idle');
+            alert(`An error occurred while saving: ${error.message || error}`);
+        }
+    };
+
+    const finalizeSave = () => {
+        setSaveStatus('saved');
+        setTimeout(() => {
+            setSaveStatus('idle');
+        }, 2000);
     };
 
     return (
@@ -148,13 +216,13 @@ export const BuilderView = () => {
                 </div>
 
                 <div className="canvas-scroll-area">
-                    {blockIds.length === 0 ? (
+                    {currentBlockIds.length === 0 ? (
                         <div className="canvas-empty-state">
                             <p>Select blocks from the left to build your prompt.</p>
                         </div>
                     ) : (
                         <div className="canvas-blocks">
-                            {blockIds.map(id => {
+                            {currentBlockIds.map(id => {
                                 const block = blocksMap[id];
                                 if (!block) return null;
                                 return (
@@ -171,12 +239,62 @@ export const BuilderView = () => {
                 </div>
 
                 <div className="canvas-footer">
-                    <button className="footer-btn secondary" onClick={() => {/* Save logic */ }}>
-                        <Save size={16} /> Save Full Prompt
-                    </button>
-                    <button className="footer-btn primary" onClick={handleCopy}>
-                        <Copy size={16} /> Copy
-                    </button>
+                    {isNaming ? (
+                        <div className="footer-naming-mode" style={{ display: 'flex', gap: '0.5rem', flex: 1, alignItems: 'center' }}>
+                            <input
+                                type="text"
+                                value={tempName}
+                                onChange={(e) => setTempName(e.target.value)}
+                                className="naming-input"
+                                autoFocus
+                                style={{
+                                    background: 'var(--bg-tertiary)',
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)',
+                                    padding: '0.4rem 0.8rem',
+                                    borderRadius: '6px',
+                                    flex: 1,
+                                    outline: 'none'
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') performSave();
+                                    if (e.key === 'Escape') setIsNaming(false);
+                                }}
+                            />
+                            <button className="footer-btn secondary" onClick={() => setIsNaming(false)}>Cancel</button>
+                            <button className="footer-btn primary" onClick={() => performSave()}>Save</button>
+                        </div>
+                    ) : (
+                        <>
+                            <button
+                                className={`footer-btn secondary ${saveStatus === 'saved' ? 'success' : ''}`}
+                                onClick={handleSaveClick}
+                                disabled={saveStatus === 'saving'}
+                            >
+                                {saveStatus === 'idle' && (
+                                    <>
+                                        <Save size={16} />
+                                        {activePromptId ? 'Save Changes' : 'Save New'}
+                                    </>
+                                )}
+                                {saveStatus === 'saving' && (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        Saving...
+                                    </>
+                                )}
+                                {saveStatus === 'saved' && (
+                                    <>
+                                        <Check size={16} />
+                                        Saved!
+                                    </>
+                                )}
+                            </button>
+                            <button className="footer-btn primary" onClick={handleCopy}>
+                                <Copy size={16} /> Copy
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
