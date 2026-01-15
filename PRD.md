@@ -2,7 +2,7 @@
 *A Modular Prompt Building Desktop Tool*
 
 **Author:** Julia Podlipensky  
-**PRDVersion:** v1.1 
+**PRDVersion:** v1.2 
 **Reference:** Concept proposal slides + PRD Co-Pilot
 
 ---
@@ -174,7 +174,7 @@ The tool is **local-first, private, and optimized for fast, daily workflows**.
 ---
 
 ### Desktop Shell
-- **Tauri (preferred)** or Electron (alternative)
+- Electron
 - Responsibilities:
   - window creation and overlay behavior
   - global hotkey registration
