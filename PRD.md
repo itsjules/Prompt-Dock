@@ -223,16 +223,22 @@ The tool is **local-first, private, and optimized for fast, daily workflows**.
 
 ## 6) Feature Modules
 
-### Module 1 — Global Access Overlay (P0)
+### Module 1 — Global Access Overlay (DONE)
 
 **User Story**  
 As a user, I want to open the prompt tool instantly via a hotkey, so I don’t break my workflow.
 
+**Implementation Results**
+- **Hotkey:** `Cmd/Ctrl+Shift+P` (Global toggle)
+- **Behavior:** Toggles visibility; centers on screen.
+- **Visuals:** Frame Size 1200x800, dark theme, first tool UI outline & page structure
+- **Control:** ESC and Hotkey both hide the window.
+
 **Acceptance Criteria**
-- Configurable global keyboard shortcut  
-- Overlay opens above all applications  
-- ESC closes overlay  
-- No perceptible delay 
+- [x] Global keyboard shortcut  
+- [x] Overlay opens above all applications (Visibility toggle)
+- [x] Hotkey closes overlay  
+- [x] No perceptible delay 
 
 ---
 
@@ -262,6 +268,7 @@ As a user, I want to build prompts from reusable blocks instead of starting from
 - Reordering via drag & drop and buttons
 - Live preview of full prompt
 - One-click “Copy to Clipboard”
+- Saving functionality for prompts & prompt blocks
 
 ---
 
@@ -274,6 +281,7 @@ As a user, I want to mark prompts that worked well so I can easily reuse them.
 - Star or thumbs-up rating  
 - Filter and sort by rating  
 - Usage count tracked per prompt  
+
 
 ---
 
