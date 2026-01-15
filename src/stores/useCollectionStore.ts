@@ -11,6 +11,8 @@ interface CollectionStore {
     getAllCollections: () => Collection[];
     addPromptToCollection: (collectionId: string, promptId: string) => void;
     removePromptFromCollection: (collectionId: string, promptId: string) => void;
+    addBlockToCollection: (collectionId: string, blockId: string) => void;
+    removeBlockFromCollection: (collectionId: string, blockId: string) => void;
     setCollections: (collections: Record<string, Collection>) => void;
 }
 
@@ -76,6 +78,27 @@ export const useCollectionStore = create<CollectionStore>((set, get) => ({
         if (collection) {
             get().updateCollection(collectionId, {
                 promptIds: collection.promptIds.filter((id) => id !== promptId),
+            });
+        }
+    },
+
+    addBlockToCollection: (collectionId, blockId) => {
+        const collection = get().collections[collectionId];
+        // Ensure blockIds exists (migration safety)
+        const currentBlockIds = collection?.blockIds || [];
+        if (collection && !currentBlockIds.includes(blockId)) {
+            get().updateCollection(collectionId, {
+                blockIds: [...currentBlockIds, blockId],
+            });
+        }
+    },
+
+    removeBlockFromCollection: (collectionId, blockId) => {
+        const collection = get().collections[collectionId];
+        const currentBlockIds = collection?.blockIds || [];
+        if (collection) {
+            get().updateCollection(collectionId, {
+                blockIds: currentBlockIds.filter((id) => id !== blockId),
             });
         }
     },

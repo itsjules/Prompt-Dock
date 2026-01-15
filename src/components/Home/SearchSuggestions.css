@@ -1,0 +1,111 @@
+.search-suggestions-container {
+    position: relative;
+    width: 100%;
+    z-index: 100;
+}
+
+.search-suggestions-overlay {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 8px;
+    background: rgba(30, 30, 35, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    animation: slideDownFade 0.2s ease-out;
+}
+
+@keyframes slideDownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.suggestion-section {
+    padding: 0.5rem 0;
+}
+
+.section-header {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.suggestion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.suggestion-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.item-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.item-icon {
+    color: var(--text-secondary);
+}
+
+.item-text {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.item-counts {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.item-counts span {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+}
+
+.item-tag {
+    font-size: 0.75rem;
+    color: var(--accent-primary);
+    background: rgba(var(--accent-primary-rgb), 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    text-transform: capitalize;
+}
+
+.no-suggestions {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.no-suggestions svg {
+    color: var(--accent-primary);
+    opacity: 0.5;
+}

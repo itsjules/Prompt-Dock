@@ -5,6 +5,7 @@ export const CollectionSchema = z.object({
     name: z.string().min(1),
     description: z.string().optional(),
     promptIds: z.array(z.string().uuid()).default([]),
+    blockIds: z.array(z.string().uuid()).default([]),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
 });

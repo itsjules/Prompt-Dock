@@ -9,10 +9,14 @@ interface UIStore {
     searchQuery: string;
     activeView: View;
     libraryTab: LibraryTab;
+    activeCollectionId: string | null;
+    recentSearches: string[];
     setOverlayOpen: (open: boolean) => void;
     setSearchQuery: (query: string) => void;
     setActiveView: (view: View) => void;
     setLibraryTab: (tab: LibraryTab) => void;
+    setActiveCollectionId: (id: string | null) => void;
+    addRecentSearch: (query: string) => void;
     toggleOverlay: () => void;
 }
 
@@ -21,6 +25,8 @@ export const useUIStore = create<UIStore>((set) => ({
     searchQuery: '',
     activeView: 'home',
     libraryTab: 'all',
+    activeCollectionId: null,
+    recentSearches: [],
 
     setOverlayOpen: (open) => set({ isOverlayOpen: open }),
 
@@ -29,6 +35,14 @@ export const useUIStore = create<UIStore>((set) => ({
     setActiveView: (view) => set({ activeView: view }),
 
     setLibraryTab: (tab) => set({ libraryTab: tab }),
+
+    setActiveCollectionId: (id) => set({ activeCollectionId: id }),
+
+    addRecentSearch: (query) => set((state) => {
+        if (!query.trim()) return state;
+        const filtered = state.recentSearches.filter(s => s !== query);
+        return { recentSearches: [query, ...filtered].slice(0, 5) };
+    }),
 
     toggleOverlay: () => set((state) => ({ isOverlayOpen: !state.isOverlayOpen })),
 }));

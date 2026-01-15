@@ -12,8 +12,10 @@ export const BlockTypeEnum = z.enum([
 export const BlockSchema = z.object({
     id: z.string().uuid(),
     type: BlockTypeEnum,
+    label: z.string().min(1),
     content: z.string().min(1),
     variables: z.record(z.string()).optional(),
+    isFavorite: z.boolean().default(false),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
 });

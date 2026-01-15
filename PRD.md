@@ -249,7 +249,7 @@ As a user, I want to open the prompt tool instantly via a hotkey, so I don’t b
 ### Module 2 — Prompt Library & Search (P0)
 
 **User Story**  
-As a user, I want to find prompts even if I don’t remember their exact name.
+As a user, I want to find prompts and blockseven if I don’t remember their exact name.
 
 **Acceptance Criteria**
 - Fuzzy search across titles, tags, and block content  

@@ -7,9 +7,11 @@ interface BlockStore {
     addBlock: (block: Omit<Block, 'id' | 'createdAt' | 'updatedAt'>) => string;
     updateBlock: (id: string, updates: Partial<Omit<Block, 'id'>>) => void;
     deleteBlock: (id: string) => void;
+    toggleFavorite: (id: string) => void;
     getBlock: (id: string) => Block | undefined;
     getAllBlocks: () => Block[];
     getBlocksByType: (type: BlockType) => Block[];
+    getFavoriteBlocks: () => Block[];
     setBlocks: (blocks: Record<string, Block>) => void;
 }
 
@@ -56,9 +58,24 @@ export const useBlockStore = create<BlockStore>((set, get) => ({
         });
     },
 
+    toggleFavorite: (id) => {
+        set((state) => {
+            const block = state.blocks[id];
+            if (!block) return state;
+            return {
+                blocks: {
+                    ...state.blocks,
+                    [id]: { ...block, isFavorite: !block.isFavorite, updatedAt: new Date().toISOString() }
+                }
+            };
+        });
+    },
+
     getBlock: (id) => get().blocks[id],
 
     getAllBlocks: () => Object.values(get().blocks),
+
+    getFavoriteBlocks: () => Object.values(get().blocks).filter(b => b.isFavorite),
 
     getBlocksByType: (type) =>
         Object.values(get().blocks).filter((block) => block.type === type),

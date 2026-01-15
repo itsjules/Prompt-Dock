@@ -1,6 +1,7 @@
 import { seedMockData } from '../../utils/mockData';
 import { useUIStore } from '../../stores/useUIStore';
 import { saveStorage } from '../../utils/storage';
+import { type StorageData } from '../../schemas/storage.schema';
 import { Database, Trash2 } from 'lucide-react';
 
 export const SettingsView = () => {
@@ -18,7 +19,7 @@ export const SettingsView = () => {
         if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
             try {
                 // Force empty storage save
-                const emptyData = {
+                const emptyData: StorageData = {
                     version: '1.0.0',
                     blocks: {},
                     prompts: {},

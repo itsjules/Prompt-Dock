@@ -1,22 +1,44 @@
+import { useState, useRef, useEffect } from 'react';
 import { ArrowUpRight, Star, Clock, Grid, Plus, Search, User } from 'lucide-react';
 import { useUIStore, type LibraryTab } from '../../stores/useUIStore';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
+import { CreateCollectionModal } from '../Library/CreateCollectionModal';
+import { SearchSuggestions } from './SearchSuggestions';
 import './HomeView.css';
 
 export const HomeView = () => {
-    const { setActiveView, setLibraryTab, setSearchQuery, searchQuery } = useUIStore();
+    const { setActiveView, setLibraryTab, setSearchQuery, searchQuery, setActiveCollectionId, addRecentSearch } = useUIStore();
     const { getFavorites, getRecents } = usePromptStore();
     const { getAllCollections } = useCollectionStore();
     const { setForNew, loadPrompt } = useBuilderStore();
+
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const searchContainerRef = useRef<HTMLDivElement>(null);
 
     const favorites = getFavorites().slice(0, 3);
     const recents = getRecents(3);
     const collections = getAllCollections().slice(0, 3);
 
-    const handleNavigateToLibrary = (tab: LibraryTab) => {
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+                setIsSearchFocused(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleNavigateToLibrary = (tab: LibraryTab, collectionId?: string) => {
         setLibraryTab(tab);
+        if (collectionId) {
+            setActiveCollectionId(collectionId);
+        } else {
+            setActiveCollectionId(null);
+        }
         setActiveView('library');
     };
 
@@ -27,8 +49,18 @@ export const HomeView = () => {
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
-        if (e.target.value.trim().length > 0) {
-            setActiveView('library');
+    };
+
+    const handleSelectSuggestion = (query: string) => {
+        setSearchQuery(query);
+        addRecentSearch(query);
+        setIsSearchFocused(false);
+        setActiveView('library');
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && searchQuery.trim()) {
+            handleSelectSuggestion(searchQuery.trim());
         }
     };
 
@@ -57,8 +89,8 @@ export const HomeView = () => {
                     </div>
                 </div>
 
-                <div className="home-search-container">
-                    <div className="search-bar-container">
+                <div className="home-search-container" ref={searchContainerRef}>
+                    <div className={`search-bar-container ${isSearchFocused ? 'focused' : ''}`}>
                         <Search className="search-icon" size={20} />
                         <input
                             type="text"
@@ -66,9 +98,14 @@ export const HomeView = () => {
                             placeholder="Search your library..."
                             value={searchQuery}
                             onChange={handleSearch}
+                            onFocus={() => setIsSearchFocused(true)}
+                            onKeyDown={handleKeyDown}
                             autoFocus
                         />
                     </div>
+                    {isSearchFocused && (
+                        <SearchSuggestions onSelect={handleSelectSuggestion} />
+                    )}
                 </div>
             </div>
 
@@ -126,9 +163,14 @@ export const HomeView = () => {
                 <div className="dashboard-widget">
                     <div className="widget-header">
                         <h3><Grid size={16} /> Collections</h3>
-                        <button className="widget-action" onClick={() => handleNavigateToLibrary('collections')}>
-                            <ArrowUpRight size={18} />
-                        </button>
+                        <div className="widget-header-actions">
+                            <button className="widget-action" onClick={() => setShowCreateModal(true)} title="New Collection">
+                                <Plus size={18} />
+                            </button>
+                            <button className="widget-action" onClick={() => handleNavigateToLibrary('collections')}>
+                                <ArrowUpRight size={18} />
+                            </button>
+                        </div>
                     </div>
                     <div className="widget-content">
                         {collections.length === 0 ? (
@@ -136,12 +178,11 @@ export const HomeView = () => {
                         ) : (
                             <div className="widget-item-list">
                                 {collections.map(c => (
-                                    <div key={c.id} className="widget-item" onClick={() => {
-                                        // TODO: Pass collection ID filter? For now just go to collections tab
-                                        handleNavigateToLibrary('collections');
-                                    }}>
+                                    <div key={c.id} className="widget-item" onClick={() => handleNavigateToLibrary('collections', c.id)}>
                                         <div className="widget-item-title">{c.name}</div>
-                                        <div className="widget-item-desc">{c.promptIds.length} prompts</div>
+                                        <div className="widget-item-desc">
+                                            {c.promptIds.length} prompts, {c.blockIds?.length || 0} blocks
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -155,6 +196,11 @@ export const HomeView = () => {
                 <Plus size={20} strokeWidth={3} />
                 Start from Scratch
             </button>
+
+            {/* Create Collection Modal */}
+            {showCreateModal && (
+                <CreateCollectionModal onClose={() => setShowCreateModal(false)} />
+            )}
         </div>
     );
 };

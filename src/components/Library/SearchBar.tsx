@@ -11,7 +11,7 @@ export const SearchBar = () => {
             <input
                 type="text"
                 className="search-input"
-                placeholder="Search prompts..."
+                placeholder="Search library..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
