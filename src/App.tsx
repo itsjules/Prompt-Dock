@@ -3,6 +3,8 @@ import { useUIStore } from './stores/useUIStore';
 import { Layout } from './components/Layout';
 import { LibraryView } from './components/Library/LibraryView';
 import { BuilderView } from './components/Builder/BuilderView';
+import { HomeView } from './components/Home/HomeView';
+import { SettingsView } from './components/Settings/SettingsView';
 import './App.css';
 
 function App() {
@@ -13,15 +15,10 @@ function App() {
 
     return (
         <Layout>
-            {activeView === 'home' && <LibraryView />}
+            {activeView === 'home' && <HomeView />}
             {activeView === 'library' && <LibraryView />}
             {activeView === 'builder' && <BuilderView />}
-            {activeView === 'settings' && (
-                <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
-                    <h2>Settings</h2>
-                    <p>Coming soon in Phase 3...</p>
-                </div>
-            )}
+            {activeView === 'settings' && <SettingsView />}
         </Layout>
     );
 }

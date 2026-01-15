@@ -252,12 +252,12 @@ As a user, I want to open the prompt tool instantly via a hotkey, so I don’t b
 As a user, I want to find prompts even if I don’t remember their exact name.
 
 **Acceptance Criteria**
-- Fuzzy search across titles, tags, and block content  
-- Views for:
-  - Favorites  
-  - Recents  
-  - Collections  
-- Filter by style, topic, and technique 
+- [x] Fuzzy search across titles, tags, and block content  
+- [x] Views for:
+  - [x] Favorites  
+  - [x] Recents  
+  - [-] Collections (View implemented, Management pending)
+- [x] Filter by style, topic, and technique 
 
 ---
 
