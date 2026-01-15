@@ -230,14 +230,18 @@ As a user, I want to open the prompt tool instantly via a hotkey, so I don’t b
 
 **Implementation Results**
 - **Hotkey:** `Cmd/Ctrl+Shift+P` (Global toggle)
-- **Behavior:** Toggles visibility; centers on screen.
-- **Visuals:** Frame Size 1200x800, dark theme, first tool UI outline & page structure
-- **Control:** ESC and Hotkey both hide the window.
+- **Background Persistence:** App stays in System Tray when "closed"; global hotkey always active.
+- **System Tray:** Bauhaus-style logo with "Show" and "Quit" options.
+- **Auto-Launch:** App starts automatically on system login.
+- **Visuals:** 1200x800 frame, dark theme, centered overlay.
+- **Control:** ESC, Hotkey, and Tray all control window visibility.
 
 **Acceptance Criteria**
 - [x] Global keyboard shortcut  
-- [x] Overlay opens above all applications (Visibility toggle)
+- [x] Overlay opens above all applications (Windows Top-Level)
 - [x] Hotkey closes overlay  
+- [x] System Tray support & Background mode
+- [x] Auto-launch at login
 - [x] No perceptible delay 
 
 ---
