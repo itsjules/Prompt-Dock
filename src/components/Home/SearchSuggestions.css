@@ -109,3 +109,20 @@
     color: var(--accent-primary);
     opacity: 0.5;
 }
+
+.no-suggestions-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.no-suggestions .sub-text {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.no-suggestions .sub-text b {
+    color: var(--text-primary);
+    font-weight: 600;
+}

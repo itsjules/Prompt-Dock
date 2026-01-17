@@ -1,18 +1,29 @@
 import { useMemo } from 'react';
-import { Search, History, Sparkles, FileText, LayoutGrid } from 'lucide-react';
+import { Search, History, Sparkles, FileText, LayoutGrid, Folder } from 'lucide-react';
 import { useUIStore } from '../../stores/useUIStore';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useBlockStore } from '../../stores/useBlockStore';
+import { useCollectionStore } from '../../stores/useCollectionStore';
 import './SearchSuggestions.css';
 
+export interface SuggestionItem {
+    text: string;
+    type: 'keyword' | 'prompt' | 'block' | 'collection';
+    id?: string;
+    icon?: React.ReactNode;
+    pCount?: number;
+    bCount?: number;
+}
+
 interface SearchSuggestionsProps {
-    onSelect: (query: string) => void;
+    onSelect: (item: SuggestionItem | string) => void;
 }
 
 export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
     const { searchQuery, recentSearches } = useUIStore();
     const { getAllPrompts } = usePromptStore();
     const { getAllBlocks } = useBlockStore();
+    const { getAllCollections } = useCollectionStore();
 
     const query = searchQuery.trim().toLowerCase();
 
@@ -21,13 +32,15 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
 
         const prompts = getAllPrompts();
         const blocks = getAllBlocks();
+        const collections = getAllCollections();
 
         // 1. Extract Keywords/Tags (Prioritized)
         const keywordMatches = new Map<string, { pCount: number, bCount: number }>();
 
         // Helper to add matches
         const addMatch = (term: string, isPrompt: boolean) => {
-            const normalized = term.toLowerCase().trim();
+            // Strip punctuation and normalize
+            const normalized = term.toLowerCase().replace(/[.,!?;:]/g, '').trim();
             if (normalized.length < 2) return;
             if (normalized.includes(query) || query.includes(normalized)) {
                 if (!keywordMatches.has(normalized)) {
@@ -39,20 +52,24 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
             }
         };
 
-        // Extract from Prompt tags and titles
+        // Extract from Prompt tags, titles, and descriptions
         prompts.forEach(p => {
             p.title.split(/[\s-]+/).forEach(w => addMatch(w, true));
+            if (p.description) {
+                p.description.split(/[\s-]+/).forEach(w => addMatch(w, true));
+            }
             if (p.tags) {
                 Object.values(p.tags).flat().forEach(t => addMatch(t, true));
             }
         });
 
-        // Extract from Block labels
+        // Extract from Block labels and content
         blocks.forEach(b => {
             b.label.split(/[\s-]+/).forEach(w => addMatch(w, false));
+            b.content.split(/[\s-]+/).forEach(w => addMatch(w, false));
         });
 
-        const results: any[] = [];
+        const results: SuggestionItem[] = [];
 
         // Add matching keywords first (Prioritized per user request)
         const sortedKeywords = Array.from(keywordMatches.entries())
@@ -68,9 +85,10 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
                 // If same prefix status, prioritize high volume
                 return (b[1].pCount + b[1].bCount) - (a[1].pCount + a[1].bCount);
             })
-            .slice(0, 4);
+            .slice(0, 3); // Slightly reduced to make room for collections
 
         sortedKeywords.forEach(([text, counts]) => {
+            // Only add if it's not a direct match to a collection name (avoid dupe-ish feel)
             results.push({
                 text,
                 type: 'keyword',
@@ -80,7 +98,12 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
             });
         });
 
-        // 2. Direct matches in titles/labels (Secondary)
+        // 2. Direct matches (Collections, Prompts, Blocks)
+
+        const matchingCollections = collections.filter(c =>
+            c.name.toLowerCase().includes(query)
+        );
+
         const matchingPrompts = prompts.filter(p =>
             p.title.toLowerCase().includes(query) &&
             !results.some(r => r.text.toLowerCase() === p.title.toLowerCase())
@@ -90,24 +113,38 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
             !results.some(r => r.text.toLowerCase() === b.label.toLowerCase())
         );
 
+        // Add Collections
+        matchingCollections.slice(0, 2).forEach(c => {
+            results.push({
+                text: c.name,
+                type: 'collection',
+                id: c.id,
+                icon: <Folder size={14} />
+            });
+        });
+
+        // Add Prompts
         matchingPrompts.slice(0, 3).forEach(p => {
             results.push({
                 text: p.title,
                 type: 'prompt',
+                // id: p.id, // Can add ID if we want direct nav to builder later
                 icon: <FileText size={14} />
             });
         });
 
+        // Add Blocks
         matchingBlocks.slice(0, 2).forEach(b => {
             results.push({
                 text: b.label,
                 type: 'block',
+                // id: b.id, 
                 icon: <LayoutGrid size={14} />
             });
         });
 
         return results;
-    }, [query, getAllPrompts, getAllBlocks]);
+    }, [query, getAllPrompts, getAllBlocks, getAllCollections]);
 
     if (!query && recentSearches.length === 0) return null;
 
@@ -132,15 +169,19 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
                     <div className="suggestion-section">
                         <div className="section-header">Suggestions</div>
                         {suggestions.map((s, i) => (
-                            <div key={i} className="suggestion-item" onClick={() => onSelect(s.text)}>
+                            <div key={i} className="suggestion-item" onClick={() => onSelect(s)}>
                                 <div className="item-main">
                                     <span className="item-icon">{s.icon}</span>
                                     <span className="item-text">{s.text}</span>
                                 </div>
-                                {s.type === 'keyword' && (s.pCount > 0 || s.bCount > 0) && (
+                                {s.type === 'keyword' && (
                                     <div className="item-counts">
-                                        {s.pCount > 0 && <span>{s.pCount} prompts</span>}
-                                        {s.bCount > 0 && <span>{s.bCount} blocks</span>}
+                                        <span>
+                                            {[
+                                                (s.pCount ?? 0) > 0 && `${s.pCount} prompts`,
+                                                (s.bCount ?? 0) > 0 && `${s.bCount} blocks`
+                                            ].filter(Boolean).join(', ')}
+                                        </span>
                                     </div>
                                 )}
                                 {s.type !== 'keyword' && (
@@ -154,7 +195,10 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
                 {query && suggestions.length === 0 && (
                     <div className="no-suggestions">
                         <Sparkles size={16} />
-                        <span>Search for "{searchQuery}" in Library</span>
+                        <div className="no-suggestions-text">
+                            <span>No direct matches for "{searchQuery}"</span>
+                            <span className="sub-text">Press <b>Enter</b> to search text in Library.</span>
+                        </div>
                     </div>
                 )}
             </div>

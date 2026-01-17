@@ -5,7 +5,7 @@ import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
 import { CreateCollectionModal } from '../Library/CreateCollectionModal';
-import { SearchSuggestions } from './SearchSuggestions';
+import { SearchSuggestions, SuggestionItem } from './SearchSuggestions';
 import './HomeView.css';
 
 export const HomeView = () => {
@@ -33,6 +33,7 @@ export const HomeView = () => {
     }, []);
 
     const handleNavigateToLibrary = (tab: LibraryTab, collectionId?: string) => {
+        setSearchQuery(''); // Clear search query to ensure clean navigation
         setLibraryTab(tab);
         if (collectionId) {
             setActiveCollectionId(collectionId);
@@ -51,9 +52,22 @@ export const HomeView = () => {
         setSearchQuery(e.target.value);
     };
 
-    const handleSelectSuggestion = (query: string) => {
-        setSearchQuery(query);
-        addRecentSearch(query);
+    const handleSelectSuggestion = (suggestion: SuggestionItem | string) => {
+        const text = typeof suggestion === 'string' ? suggestion : suggestion.text;
+
+        // Add specific text to history
+        addRecentSearch(text);
+
+        // Handle collection navigation
+        if (typeof suggestion === 'object' && suggestion.type === 'collection' && suggestion.id) {
+            setSearchQuery(''); // Clear search so we see the whole collection
+            setIsSearchFocused(false);
+            handleNavigateToLibrary('collections', suggestion.id);
+            return;
+        }
+
+        // Default: Search in library
+        setSearchQuery(text);
         setIsSearchFocused(false);
         setActiveView('library');
     };
