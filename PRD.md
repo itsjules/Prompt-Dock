@@ -246,18 +246,30 @@ As a user, I want to open the prompt tool instantly via a hotkey, so I don’t b
 
 ---
 
-### Module 2 — Prompt Library & Search (P0)
+### Module 2 — Prompt Library & Search (DONE)
 
 **User Story**  
-As a user, I want to find prompts and blockseven if I don’t remember their exact name.
+As a user, I want to find prompts and blocks even if I don’t remember their exact name.
+
+**Implementation Results**
+- **Unified Library Grid:** Prompts and Blocks are rendered in a single, cohesive grid.
+- **Search Functionality:** 
+    - Implemented fuzzy search across titles, tags, and block content using `Fuse.js`.
+    - **Category-Based Results:** Search results are organized into "Prompts" and "Blocks" categories.
+    - **Dynamic Count Filtering:** Intelligent result headers that only show category counts when multiple types are present, or hide the count if only one category has matches to reduce visual clutter.
+- **Role-Based Ranking:** Integrated a global "Role" system (Coding, Research, etc.) that dynamically reorders search results and library items based on relevance to the active role.
+- **Role Selector:** Inline role switching in the library for instant context updates.
+- **Interactive Block Cards:** Blocks are scrollable/selectable (read-only) with transient action overlays (Fade-in on hover, no blur).
+- **Tab Refinements:** Modernized library navigation (All, Favorites, Recents, Collections) with underline indicators and premium alignment.
+- **Persistent Data:** Full local storage support for custom roles and search/rank logic.
 
 **Acceptance Criteria**
-- Fuzzy search across titles, tags, and block content  
-- Views for:
-  - Favorites  
-  - Recents  
-  - Collections  
-- Filter by style, topic, and technique 
+- [x] Fuzzy search across titles, tags, and block content for faster access 
+- [x] Views for:
+  - [x] Favorites  
+  - [x] Recents  
+  - [x] Collections  
+- [x] (Adjusted) Automatic role-based context filtering (Style, topic, technique integrated into Role logic)
 
 ---
 

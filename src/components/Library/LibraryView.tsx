@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Fuse from 'fuse.js';
-import { Star, Clock, Grid, Tag, FolderPlus } from 'lucide-react';
+import { Star, Clock, Grid, Tag, FolderPlus, Plus, Copy } from 'lucide-react';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBlockStore } from '../../stores/useBlockStore';
@@ -310,24 +310,39 @@ export const LibraryView = () => {
                                 const block = item.original as any;
                                 return (
                                     <div key={item.id} className="library-block-wrapper" onClick={() => handleUseBlock(block.id)}>
-                                        <div style={{ pointerEvents: 'none' }}>
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                             <BlockComponent
                                                 block={block}
                                                 onUpdate={() => { }}
                                                 onDelete={() => { }}
+                                                hideDragHandle={true}
+                                                hideDelete={true}
+                                                readOnly={true}
                                             />
                                         </div>
-                                        <div className="library-block-overlay">
-                                            <div className="overlay-actions">
-                                                <button
-                                                    className="overlay-btn"
-                                                    onClick={(e) => { e.stopPropagation(); handleAddToCollection(block.id, 'block', block.label); }}
-                                                    title="Add to Collection"
-                                                >
-                                                    <FolderPlus size={16} />
-                                                </button>
-                                                <span className="add-text">Add to Canvas</span>
-                                            </div>
+                                        {/* Prompt-like Actions Footer */}
+                                        <div className="block-card-footer">
+                                            <button
+                                                className="action-btn"
+                                                onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(block.content); }}
+                                                title="Copy Content"
+                                            >
+                                                <Copy size={16} />
+                                            </button>
+                                            <button
+                                                className="action-btn"
+                                                onClick={(e) => { e.stopPropagation(); handleAddToCollection(block.id, 'block', block.label); }}
+                                                title="Add to Collection"
+                                            >
+                                                <FolderPlus size={16} />
+                                            </button>
+                                            <button
+                                                className="action-btn primary"
+                                                onClick={(e) => { e.stopPropagation(); handleUseBlock(block.id); }}
+                                                title="Use this block"
+                                            >
+                                                <Plus size={16} /> Use
+                                            </button>
                                         </div>
                                     </div>
                                 );
