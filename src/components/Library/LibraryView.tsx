@@ -4,12 +4,14 @@ import { Star, Clock, Grid, Tag, FolderPlus } from 'lucide-react';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBlockStore } from '../../stores/useBlockStore';
+import { useRoleStore } from '../../stores/useRoleStore';
 import { useUIStore } from '../../stores/useUIStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
 import { PromptCard } from './PromptCard';
 import { SearchBar } from './SearchBar';
 import { BlockComponent } from '../Builder/Block'; // Reuse Block Component
 import { AddToCollectionModal } from './AddToCollectionModal';
+import { RoleSelector } from '../Role/RoleSelector';
 import './LibraryView.css';
 
 export const LibraryView = () => {
@@ -19,6 +21,8 @@ export const LibraryView = () => {
 
     const { searchQuery, setActiveView, libraryTab, setLibraryTab, activeCollectionId, setActiveCollectionId } = useUIStore();
     const { loadPrompt, addBlockId } = useBuilderStore();
+    const activeRoleId = useRoleStore(state => state.activeRoleId);
+    const getRelevanceScore = useRoleStore(state => state.getRelevanceScore);
 
     // Use global state for active tab
     const activeTab = libraryTab;
@@ -96,36 +100,72 @@ export const LibraryView = () => {
             keys: [
                 'title',
                 'desc',
-                'content', // Search block content!
+                'content',
                 'tags.style',
                 'tags.topic',
                 'tags.technique'
             ],
             threshold: 0.4,
+            includeScore: true,
+            sortFn: (a, b) => {
+                return a.score - b.score;
+            }
         });
     }, [searchItems]);
 
-    // Filtered Results
+    // Filtered & Sorted Results
     const displayedItems = useMemo(() => {
         let results = searchItems;
 
         // 1. Fuzzy Search
         if (searchQuery.trim()) {
-            results = fuse.search(searchQuery).map(result => result.item);
+            const fuseResults = fuse.search(searchQuery);
+            // Remap to items
+            results = fuseResults.map(r => r.item);
         }
 
-        // 2. Tag Filtering (Only applies to Prompts mostly)
+        // 2. Tag Filtering (Strict)
         if (selectedTags.size > 0) {
             results = results.filter(item => {
-                if (item.type === 'block') return true; // Don't filter blocks by tag
-                // Strict filter: if tags are selected, only show items with those tags.
-                // Blocks don't have tags, so they are hidden when filtering by tag.
-                return false;
+                if (item.type === 'block') return true;
+                if (!item.tags) return false;
+                // check intersection
+                const itemTags = [...(item.tags.style || []), ...(item.tags.topic || []), ...(item.tags.technique || [])];
+                return [...selectedTags].every(t => itemTags.includes(t));
+            });
+        }
+
+        // 3. Role-Based Re-ranking (The "Reordering" requirement)
+        // We calculate a score for each item based on the active role's keywords vs item metadata
+
+        if (activeRoleId) {
+            results = [...results].sort((a, b) => { // Stable sort copy
+                // Calculate score for A
+                const tagsA = a.type === 'prompt' && a.tags
+                    ? [...(a.tags.style || []), ...(a.tags.topic || []), ...(a.tags.technique || [])]
+                    : [];
+                const textA = `${a.title} ${a.desc}`;
+                const scoreA = getRelevanceScore(textA, tagsA);
+
+                // Calculate score for B
+                const tagsB = b.type === 'prompt' && b.tags
+                    ? [...(b.tags.style || []), ...(b.tags.topic || []), ...(b.tags.technique || [])]
+                    : [];
+                const textB = `${b.title} ${b.desc}`;
+                const scoreB = getRelevanceScore(textB, tagsB);
+
+                if (scoreA !== scoreB) {
+                    return scoreB - scoreA; // Descending order of relevance
+                }
+                // Tie-breaker: Recency (Updated At)
+                const dateA = new Date(a.original.updatedAt).getTime();
+                const dateB = new Date(b.original.updatedAt).getTime();
+                return dateB - dateA;
             });
         }
 
         return results;
-    }, [fuse, searchQuery, searchItems, selectedTags]);
+    }, [fuse, searchQuery, searchItems, selectedTags, activeRoleId, getRelevanceScore]);
 
     // --- HANDLERS ---
 
@@ -159,7 +199,16 @@ export const LibraryView = () => {
 
     return (
         <div className="library-view">
-            <SearchBar />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                <div style={{ flex: 1 }}>
+                    <SearchBar />
+                </div>
+                {/* Role Selector (Inline) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Prioritizing:</span>
+                    <RoleSelector />
+                </div>
+            </div>
 
             {/* Library Tabs */}
             <div className="library-tabs">
@@ -192,6 +241,8 @@ export const LibraryView = () => {
                     Collections
                 </button>
             </div>
+
+
 
             {/* Collection Selector */}
             {activeTab === 'collections' && (
@@ -244,42 +295,44 @@ export const LibraryView = () => {
                     </div>
                 ) : (
                     <div className="prompts-grid">
-                        {/* Section 1: Prompts */}
-                        {displayedItems.filter(i => i.type === 'prompt').map(item => (
-                            <PromptCard
-                                key={item.id}
-                                prompt={(item.original as any)}
-                                onUse={() => handleUsePrompt(item.id)}
-                                onAddToCollection={(p) => handleAddToCollection(p.id, 'prompt', p.title)}
-                            />
-                        ))}
-
-                        {/* Section 2: Blocks */}
-                        {displayedItems.filter(i => i.type === 'block').map(item => {
-                            const block = item.original as any;
-                            return (
-                                <div key={item.id} className="library-block-wrapper" onClick={() => handleUseBlock(block.id)}>
-                                    <div style={{ pointerEvents: 'none' }}>
-                                        <BlockComponent
-                                            block={block}
-                                            onUpdate={() => { }}
-                                            onDelete={() => { }}
-                                        />
-                                    </div>
-                                    <div className="library-block-overlay">
-                                        <div className="overlay-actions">
-                                            <button
-                                                className="overlay-btn"
-                                                onClick={(e) => { e.stopPropagation(); handleAddToCollection(block.id, 'block', block.label); }}
-                                                title="Add to Collection"
-                                            >
-                                                <FolderPlus size={16} />
-                                            </button>
-                                            <span className="add-text">Add to Canvas</span>
+                        {displayedItems.map(item => {
+                            if (item.type === 'prompt') {
+                                const prompt = item.original as any;
+                                return (
+                                    <PromptCard
+                                        key={item.id}
+                                        prompt={prompt}
+                                        onUse={() => handleUsePrompt(item.id)}
+                                        onAddToCollection={(p) => handleAddToCollection(p.id, 'prompt', p.title)}
+                                    />
+                                );
+                            } else if (item.type === 'block') {
+                                const block = item.original as any;
+                                return (
+                                    <div key={item.id} className="library-block-wrapper" onClick={() => handleUseBlock(block.id)}>
+                                        <div style={{ pointerEvents: 'none' }}>
+                                            <BlockComponent
+                                                block={block}
+                                                onUpdate={() => { }}
+                                                onDelete={() => { }}
+                                            />
+                                        </div>
+                                        <div className="library-block-overlay">
+                                            <div className="overlay-actions">
+                                                <button
+                                                    className="overlay-btn"
+                                                    onClick={(e) => { e.stopPropagation(); handleAddToCollection(block.id, 'block', block.label); }}
+                                                    title="Add to Collection"
+                                                >
+                                                    <FolderPlus size={16} />
+                                                </button>
+                                                <span className="add-text">Add to Canvas</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
+                                );
+                            }
+                            return null;
                         })}
                     </div>
                 )}

@@ -5,7 +5,9 @@ import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
 import { CreateCollectionModal } from '../Library/CreateCollectionModal';
-import { SearchSuggestions, SuggestionItem } from './SearchSuggestions';
+import { SuggestionItem, SearchSuggestions } from './SearchSuggestions';
+import { RoleSelector } from '../Role/RoleSelector';
+import { useRoleStore } from '../../stores/useRoleStore';
 import './HomeView.css';
 
 export const HomeView = () => {
@@ -18,9 +20,32 @@ export const HomeView = () => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const searchContainerRef = useRef<HTMLDivElement>(null);
 
-    const favorites = getFavorites().slice(0, 3);
-    const recents = getRecents(3);
-    const collections = getAllCollections().slice(0, 3);
+    const { getRelevanceScore } = useRoleStore();
+    // Subscribe to activeRoleId to trigger re-renders
+    useRoleStore(state => state.activeRoleId);
+
+    const sortWithRole = (items: any[], type: 'prompt' | 'collection') => {
+        return [...items].sort((a, b) => {
+            const textA = type === 'prompt' ? `${a.title} ${a.description || ''}` : `${a.name} ${a.description || ''}`;
+            const tagsA = type === 'prompt' ? [...(a.tags?.style || []), ...(a.tags?.topic || []), ...(a.tags?.technique || [])] : [];
+            const scoreA = getRelevanceScore(textA, tagsA);
+
+            const textB = type === 'prompt' ? `${b.title} ${b.description || ''}` : `${b.name} ${b.description || ''}`;
+            const tagsB = type === 'prompt' ? [...(b.tags?.style || []), ...(b.tags?.topic || []), ...(b.tags?.technique || [])] : [];
+            const scoreB = getRelevanceScore(textB, tagsB);
+
+            if (scoreA !== scoreB) return scoreB - scoreA;
+            // Tie-breaker: Recency if available, else name
+            if (a.updatedAt && b.updatedAt) {
+                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+            }
+            return 0;
+        });
+    };
+
+    const favorites = sortWithRole(getFavorites(), 'prompt').slice(0, 3);
+    const recents = getRecents(3); // Recents should primarily be chronological
+    const collections = sortWithRole(getAllCollections(), 'collection').slice(0, 3);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -96,10 +121,9 @@ export const HomeView = () => {
                         <h1>Hi there!</h1>
                         <p>What are you building today?</p>
                     </div>
-                    {/* Placeholder Context Badge */}
-                    <div className="context-badge">
-                        <User size={14} />
-                        <span>Personal</span>
+                    {/* Role Selector */}
+                    <div className="context-badge-wrapper">
+                        <RoleSelector />
                     </div>
                 </div>
 

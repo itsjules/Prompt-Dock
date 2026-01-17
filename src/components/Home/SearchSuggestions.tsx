@@ -4,6 +4,7 @@ import { useUIStore } from '../../stores/useUIStore';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
+import { useRoleStore } from '../../stores/useRoleStore';
 import './SearchSuggestions.css';
 
 export interface SuggestionItem {
@@ -24,6 +25,8 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
     const { getAllPrompts } = usePromptStore();
     const { getAllBlocks } = useBlockStore();
     const { getAllCollections } = useCollectionStore();
+    const activeRoleId = useRoleStore(state => state.activeRoleId);
+    const getRelevanceScore = useRoleStore(state => state.getRelevanceScore);
 
     const query = searchQuery.trim().toLowerCase();
 
@@ -143,8 +146,50 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
             });
         });
 
-        return results;
-    }, [query, getAllPrompts, getAllBlocks, getAllCollections]);
+        const { getRelevanceScore } = useRoleStore.getState();
+
+        // Final Sort: Apply Role Relevance to results
+        // Keywords are already sorted by volume, but we might want to boost role-relevant ones?
+        // Prioritize keywords that match role keywords.
+
+        // 1. Re-sort keywords
+        // We can check if the keyword matches any active role keywords for a boost.
+        // Actually keywords are user inputs, but if they match role keywords they are likely better.
+
+        // 2. Re-sort Items (Prompts/Blocks)
+        // We want to sort the typed results (prompts/blocks/collections) by relevance too.
+
+        const finalResults = results.sort((a, b) => {
+            // Priority: Keyword > Collection > Prompt > Block (default structure)
+            // But within same type, use relevance.
+
+            const typeScore = (type: string) => {
+                if (type === 'keyword') return 4;
+                if (type === 'collection') return 3;
+                if (type === 'prompt') return 2;
+                return 1;
+            };
+
+            if (a.type !== b.type) {
+                return typeScore(b.type) - typeScore(a.type);
+            }
+
+            // Same type: check content relevance
+            const textA = a.text; // rudimentary, ideally check full object
+            const textB = b.text;
+
+            const scoreA = getRelevanceScore(textA); // tags missing here, but okay for quick suggestions
+            const scoreB = getRelevanceScore(textB);
+
+            if (scoreA !== scoreB) {
+                return scoreB - scoreA;
+            }
+
+            return 0; // maintain original order (like volume match)
+        });
+
+        return finalResults;
+    }, [query, getAllPrompts, getAllBlocks, getAllCollections, activeRoleId, getRelevanceScore]);
 
     if (!query && recentSearches.length === 0) return null;
 
