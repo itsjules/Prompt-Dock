@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X } from 'lucide-react';
+import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X, Eye } from 'lucide-react';
+import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
 import { usePromptStore } from '../../stores/usePromptStore';
@@ -51,6 +52,7 @@ export const BuilderView = () => {
     const [selectedCategory, setSelectedCategory] = useState<BlockType>('Role');
     const [pickerSearch, setPickerSearch] = useState('');
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+    const [isShowingPreview, setIsShowingPreview] = useState(false);
 
     // Naming / Creation State
     const [isNamingPrompt, setIsNamingPrompt] = useState(false);
@@ -62,8 +64,8 @@ export const BuilderView = () => {
     const [newBlockContent, setNewBlockContent] = useState('');
 
     // Global Stores
-    const { activePromptId, currentBlockIds, addBlockId, removeBlockId, clear: clearBuilder } = useBuilderStore();
-    const { addBlock, updateBlock, deleteBlock, getBlocksByType } = useBlockStore();
+    const { activePromptId, currentBlockIds, addBlockId, removeBlockId, moveBlock, reorderBlocks, clear: clearBuilder } = useBuilderStore();
+    const { addBlock, updateBlock, getBlocksByType } = useBlockStore();
     const blocksMap = useBlockStore(state => state.blocks);
     const { addPrompt, updatePrompt, getPrompt } = usePromptStore();
 
@@ -102,7 +104,8 @@ export const BuilderView = () => {
         const id = addBlock({
             type: selectedCategory,
             label: newBlockLabel,
-            content: newBlockContent
+            content: newBlockContent,
+            isFavorite: false
         });
 
         addBlockId(id); // Auto-add to canvas? Yes, usually desired.
@@ -121,11 +124,25 @@ export const BuilderView = () => {
         // We do NOT delete from the global library here, just the canvas.
     };
 
+    const handleMoveBlockInCanvas = (id: string, direction: 'up' | 'down') => {
+        moveBlock(id, direction);
+    };
+
     const handleClearCanvas = () => {
         if (confirm('Are you sure you want to clear all blocks from the canvas?')) {
             clearBuilder();
             setIsNamingPrompt(false);
         }
+    };
+
+    const handleDragEnd = (result: DropResult) => {
+        if (!result.destination) return;
+
+        const items = Array.from(currentBlockIds);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+
+        reorderBlocks(items);
     };
 
     const livePreview = currentBlockIds
@@ -316,6 +333,9 @@ export const BuilderView = () => {
             <div className="pane-canvas">
                 <div className="canvas-header">
                     <h3>Prompt Canvas</h3>
+                    <button className="text-btn secondary" onClick={() => setIsShowingPreview(true)} title="Live Preview">
+                        <Eye size={14} />
+                    </button>
                     <button className="text-btn danger" onClick={handleClearCanvas} title="Clear all">
                         <Trash size={14} />
                     </button>
@@ -327,20 +347,33 @@ export const BuilderView = () => {
                             <p>Select blocks from the library to build your prompt.</p>
                         </div>
                     ) : (
-                        <div className="canvas-blocks">
-                            {currentBlockIds.map(id => {
-                                const block = blocksMap[id];
-                                if (!block) return null;
-                                return (
-                                    <BlockComponent
-                                        key={id}
-                                        block={block}
-                                        onUpdate={handleUpdateBlockInCanvas}
-                                        onDelete={handleDeleteBlockFromCanvas}
-                                    />
-                                );
-                            })}
-                        </div>
+                        <DragDropContext onDragEnd={handleDragEnd}>
+                            <Droppable droppableId="builder-canvas">
+                                {(provided) => (
+                                    <div
+                                        className="canvas-blocks"
+                                        {...provided.droppableProps}
+                                        ref={provided.innerRef}
+                                    >
+                                        {currentBlockIds.map((id, index) => {
+                                            const block = blocksMap[id];
+                                            if (!block) return null;
+                                            return (
+                                                <BlockComponent
+                                                    key={`${id}-${index}`} // Use index in key if duplicate blocks allowed, but id-index is safer
+                                                    index={index}
+                                                    block={block}
+                                                    onUpdate={handleUpdateBlockInCanvas}
+                                                    onDelete={handleDeleteBlockFromCanvas}
+                                                    onMove={handleMoveBlockInCanvas}
+                                                />
+                                            );
+                                        })}
+                                        {provided.placeholder}
+                                    </div>
+                                )}
+                            </Droppable>
+                        </DragDropContext>
                     )}
                 </div>
 
@@ -394,6 +427,30 @@ export const BuilderView = () => {
                     )}
                 </div>
             </div>
+
+            {/* LIVE PREVIEW MODAL */}
+            {isShowingPreview && (
+                <div className="preview-modal-overlay" onClick={() => setIsShowingPreview(false)}>
+                    <div className="preview-modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Full Prompt Preview</h3>
+                            <button className="close-btn" onClick={() => setIsShowingPreview(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <pre className="full-prompt-text">
+                                {livePreview || "Your prompt is empty. Add blocks to build it!"}
+                            </pre>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="footer-btn primary" onClick={handleCopyPreview}>
+                                <Copy size={16} /> Copy to Clipboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

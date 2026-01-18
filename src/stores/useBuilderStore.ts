@@ -14,6 +14,7 @@ interface BuilderStore {
     addBlockId: (id: string, index?: number) => void;
     removeBlockId: (id: string) => void;
     reorderBlocks: (ids: string[]) => void;
+    moveBlock: (id: string, direction: 'up' | 'down') => void;
     clear: () => void;
 }
 
@@ -76,6 +77,23 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
             currentBlockIds: ids,
             isDirty: true
         });
+    },
+
+    moveBlock: (id, direction) => {
+        const { currentBlockIds } = get();
+        const index = currentBlockIds.indexOf(id);
+        if (index === -1) return;
+
+        const newIds = [...currentBlockIds];
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+
+        if (newIndex >= 0 && newIndex < newIds.length) {
+            [newIds[index], newIds[newIndex]] = [newIds[newIndex], newIds[index]];
+            set({
+                currentBlockIds: newIds,
+                isDirty: true
+            });
+        }
     },
 
     clear: () => {

@@ -1,18 +1,24 @@
 .block-item {
     background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-left-width: 4px;
     border-radius: 6px;
     margin-bottom: 1rem;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: box-shadow 0.2s, transform 0.2s;
+    transition: all 0.2s ease;
 }
 
 .block-item:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    /* transform: translateX(2px); */
-    /* Optional movement */
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.block-item.is-dragging {
+    opacity: 0.85;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.01);
+    z-index: 1000;
 }
 
 .block-header {
@@ -55,14 +61,16 @@
 }
 
 .block-delete-btn:hover {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.05);
     opacity: 1;
 }
 
 .block-content-area {
-    padding: 0.75rem;
+    padding: 0.75rem 0.75rem 0.25rem 0.75rem;
+    /* Reduced bottom padding */
     background-color: #232429;
-    /* Slightly darker than item bg for contrast */
+    display: flex;
+    flex-direction: column;
 }
 
 .block-textarea {
@@ -82,9 +90,7 @@
 }
 
 .block-textarea:focus {
-    background-color: #2c2e33;
-    border-color: #444;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .block-textarea::placeholder {
@@ -92,13 +98,9 @@
     font-style: italic;
 }
 
-/* Custom Scrollbar for textarea */
+/* Custom Scrollbar */
 .block-textarea::-webkit-scrollbar {
     width: 6px;
-}
-
-.block-textarea::-webkit-scrollbar-track {
-    background: transparent;
 }
 
 .block-textarea::-webkit-scrollbar-thumb {
@@ -106,6 +108,29 @@
     border-radius: 3px;
 }
 
-.block-textarea::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+/* Reorder Buttons - Micro & Clean */
+.block-reorder-corner {
+    display: flex;
+    justify-content: flex-end;
+    gap: 2px;
+    margin-top: 2px;
+    /* Reduced top margin */
+}
+
+.corner-action-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+    opacity: 0.5;
+}
+
+.corner-action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    opacity: 1;
 }
