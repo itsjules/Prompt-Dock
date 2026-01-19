@@ -34,79 +34,87 @@ const BLOCK_ACCENTS: Record<BlockType, string> = {
 };
 
 export const BlockComponent = ({ block, index, onUpdate, onDelete, onMove, hideDragHandle, hideDelete, readOnly }: BlockProps) => {
+
+    // Extracted render content to be reused or wrapped
+    const renderContent = (dragProps: any = {}, dragHandleProps: any = {}, isDragging: boolean = false, innerRef: any = null) => (
+        <div
+            className={`block-item ${isDragging ? 'is-dragging' : ''}`}
+            style={{
+                borderLeftColor: BLOCK_ACCENTS[block.type],
+                ...dragProps.style
+            }}
+            ref={innerRef}
+            {...dragProps}
+        >
+            <div className="block-header" style={{ backgroundColor: BLOCK_COLORS[block.type] }}>
+                {!hideDragHandle && !readOnly && (
+                    <div className="block-drag-handle" {...dragHandleProps}>
+                        <GripVertical size={14} color={BLOCK_ACCENTS[block.type]} />
+                    </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <span className="block-type" style={{ color: BLOCK_ACCENTS[block.type], fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
+                        {block.type.toUpperCase()}
+                    </span>
+                    <span className="block-label" style={{ color: BLOCK_ACCENTS[block.type], fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {block.label || 'Untitled Block'}
+                    </span>
+                </div>
+                <div className="block-actions" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {!hideDelete && (
+                        <button
+                            className="block-delete-btn"
+                            onClick={() => onDelete(block.id)}
+                            title="Remove block"
+                            style={{ color: BLOCK_ACCENTS[block.type] }}
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    )}
+                </div>
+            </div>
+            <div className="block-content-area">
+                <textarea
+                    className="block-textarea"
+                    value={block.content}
+                    onChange={(e) => onUpdate(block.id, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder={`Enter ${block.type} here...`}
+                    rows={3}
+                    readOnly={readOnly}
+                />
+
+                {onMove && !readOnly && (
+                    <div className="block-reorder-corner">
+                        <button
+                            className="corner-action-btn"
+                            onClick={() => onMove(block.id, 'up')}
+                            title="Move Up"
+                            style={{ color: BLOCK_ACCENTS[block.type] }}
+                        >
+                            <ChevronUp size={16} />
+                        </button>
+                        <button
+                            className="corner-action-btn"
+                            onClick={() => onMove(block.id, 'down')}
+                            title="Move Down"
+                            style={{ color: BLOCK_ACCENTS[block.type] }}
+                        >
+                            <ChevronDown size={16} />
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    if (readOnly) {
+        return renderContent();
+    }
+
     return (
         <Draggable draggableId={block.id} index={index}>
-            {(provided, snapshot) => (
-                <div
-                    className={`block-item ${snapshot.isDragging ? 'is-dragging' : ''}`}
-                    style={{
-                        borderLeftColor: BLOCK_ACCENTS[block.type],
-                        ...provided.draggableProps.style
-                    }}
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                >
-                    <div className="block-header" style={{ backgroundColor: BLOCK_COLORS[block.type] }}>
-                        {!hideDragHandle && (
-                            <div className="block-drag-handle" {...provided.dragHandleProps}>
-                                <GripVertical size={14} color={BLOCK_ACCENTS[block.type]} />
-                            </div>
-                        )}
-                        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                            <span className="block-type" style={{ color: BLOCK_ACCENTS[block.type], fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
-                                {block.type.toUpperCase()}
-                            </span>
-                            <span className="block-label" style={{ color: BLOCK_ACCENTS[block.type], fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {block.label || 'Untitled Block'}
-                            </span>
-                        </div>
-                        <div className="block-actions" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            {!hideDelete && (
-                                <button
-                                    className="block-delete-btn"
-                                    onClick={() => onDelete(block.id)}
-                                    title="Remove block"
-                                    style={{ color: BLOCK_ACCENTS[block.type] }}
-                                >
-                                    <Trash2 size={14} />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    <div className="block-content-area">
-                        <textarea
-                            className="block-textarea"
-                            value={block.content}
-                            onChange={(e) => onUpdate(block.id, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            placeholder={`Enter ${block.type} here...`}
-                            rows={3}
-                            readOnly={readOnly}
-                        />
-
-                        {onMove && (
-                            <div className="block-reorder-corner">
-                                <button
-                                    className="corner-action-btn"
-                                    onClick={() => onMove(block.id, 'up')}
-                                    title="Move Up"
-                                    style={{ color: BLOCK_ACCENTS[block.type] }}
-                                >
-                                    <ChevronUp size={16} />
-                                </button>
-                                <button
-                                    className="corner-action-btn"
-                                    onClick={() => onMove(block.id, 'down')}
-                                    title="Move Down"
-                                    style={{ color: BLOCK_ACCENTS[block.type] }}
-                                >
-                                    <ChevronDown size={16} />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+            {(provided, snapshot) => renderContent(provided.draggableProps, provided.dragHandleProps, snapshot.isDragging, provided.innerRef)}
         </Draggable>
     );
 };

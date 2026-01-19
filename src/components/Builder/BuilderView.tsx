@@ -308,16 +308,16 @@ export const BuilderView = () => {
                         {filteredBlocks.map(block => (
                             <div
                                 key={block.id}
-                                className="picker-card block-item"
+                                className="picker-card"
                                 onClick={() => handleAddBlockToCanvas(block.id)}
                             >
                                 <div className="block-item-header">
-                                    <span className="block-label">{block.label || 'Untitled Block'}</span>
+                                    <h3 className="block-label">{block.label || 'Untitled Block'}</h3>
                                     <Plus size={14} className="add-icon" />
                                 </div>
-                                <div className="block-preview">
-                                    {block.content.substring(0, 60)}...
-                                </div>
+                                <p className="block-preview">
+                                    {block.content.substring(0, 80)}...
+                                </p>
                             </div>
                         ))}
                         {filteredBlocks.length === 0 && !isCreatingBlock && (
