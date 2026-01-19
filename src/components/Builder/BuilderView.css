@@ -11,8 +11,8 @@
 .pane-header {
     height: 50px;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    align-items: center;
     padding: 0 1rem;
     border-bottom: 1px solid var(--border-color);
     background-color: var(--bg-secondary);
@@ -26,11 +26,13 @@
     /* Bold headers like sketch */
     color: var(--text-primary);
     letter-spacing: 0.5px;
+    flex: 1;
+    /* Push search to right if present */
 }
 
 /* --- PANE 1: CATEGORIES --- */
 .pane-categories {
-    width: 180px;
+    width: 160px;
     background-color: var(--bg-secondary);
     border-right: 1px solid var(--border-color);
     display: flex;
@@ -80,7 +82,7 @@
 
 /* --- PANE 2: PICKER --- */
 .pane-picker {
-    width: 260px;
+    width: 450px;
     background-color: var(--bg-primary);
     border-right: 1px solid var(--border-color);
     display: flex;
@@ -91,13 +93,15 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: var(--bg-tertiary);
     /* Dark input bg */
     padding: 0.4rem 0.6rem;
     border-radius: 6px;
     /* Rounded search like sketch */
     margin-left: auto;
     border: 1px solid var(--border-color);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
 }
 
 .picker-search input {
@@ -542,4 +546,27 @@
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: flex-end;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
 }

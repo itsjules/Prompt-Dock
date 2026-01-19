@@ -13,7 +13,11 @@ export const seedMockData = () => {
     // Helper to add block and register ID in the global map
     const createBlock = (b: { type: BlockType; label: string; content: string }) => {
         // Check for existing to prevent duplicates if run multiple times
-        const existing = Object.values(blockStore.blocks).find(ex => ex.label === b.label);
+        // ALWAYS check the fresh state, not the captured variable 'blockStore'
+        const currentBlocks = useBlockStore.getState().blocks;
+        const formattedLabel = b.label.trim();
+
+        const existing = Object.values(currentBlocks).find(ex => ex.label.trim() === formattedLabel);
         if (existing) {
             labelToId[b.label] = existing.id;
             return existing.id;

@@ -224,7 +224,7 @@ export const BuilderView = () => {
             {/* PANE 1: CATEGORY NAVIGATION */}
             <div className="pane-categories">
                 <div className="pane-header">
-                    <h3>Collection</h3>
+                    <h3>Categories</h3>
                 </div>
                 <div className="category-list">
                     {BLOCK_TYPES.map(type => {
