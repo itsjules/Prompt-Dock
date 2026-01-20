@@ -356,7 +356,11 @@ export const BuilderView = () => {
                 <div className="pane-canvas">
                     <div className="canvas-header">
                         <h3>Prompt Canvas</h3>
-                        <button className="text-btn secondary" onClick={() => setIsShowingPreview(true)} title="Live Preview">
+                        <button
+                            className={`text-btn ${isShowingPreview ? 'active' : ''}`}
+                            onClick={() => setIsShowingPreview(!isShowingPreview)}
+                            title={isShowingPreview ? "Show Blocks" : "Show Live Preview"}
+                        >
                             <Eye size={14} />
                         </button>
                         <button className="text-btn danger" onClick={handleClearCanvas} title="Clear all">
@@ -365,48 +369,58 @@ export const BuilderView = () => {
                     </div>
 
                     <div className="canvas-scroll-area">
-                        {currentBlockIds.length === 0 ? (
-                            <Droppable droppableId="builder-canvas">
-                                {(provided) => (
-                                    <div
-                                        className="canvas-empty-state"
-                                        ref={provided.innerRef}
-                                        {...provided.droppableProps}
-                                    >
-                                        <p>Select blocks from the library to build your prompt.</p>
-                                        {provided.placeholder}
-                                    </div>
-                                )}
-                            </Droppable>
+                        {isShowingPreview ? (
+                            <div className="canvas-preview-mode">
+                                <pre className="full-prompt-text">
+                                    {livePreview || "Your prompt is empty. Add blocks to build it!"}
+                                </pre>
+                            </div>
                         ) : (
-                            <Droppable droppableId="builder-canvas">
-                                {(provided) => (
-                                    <div
-                                        className="canvas-blocks"
-                                        {...provided.droppableProps}
-                                        ref={provided.innerRef}
-                                    >
-                                        {currentBlockIds.map((id, index) => {
-                                            const block = blocksMap[id];
-                                            if (!block) return null;
-                                            return (
-                                                <BlockComponent
-                                                    key={`${id}-${index}`}
-                                                    draggableId={`canvas-${id}-${index}`}
-                                                    index={index}
-                                                    block={block}
-                                                    isEditable={true}
-                                                    autoExpandTextarea={true}
-                                                    onUpdate={handleUpdateBlockInCanvas}
-                                                    onDelete={handleDeleteBlockFromCanvas}
-                                                    onMove={handleMoveBlockInCanvas}
-                                                />
-                                            );
-                                        })}
-                                        {provided.placeholder}
-                                    </div>
+                            <>
+                                {currentBlockIds.length === 0 ? (
+                                    <Droppable droppableId="builder-canvas">
+                                        {(provided) => (
+                                            <div
+                                                className="canvas-empty-state"
+                                                ref={provided.innerRef}
+                                                {...provided.droppableProps}
+                                            >
+                                                <p>Select blocks from the library to build your prompt.</p>
+                                                {provided.placeholder}
+                                            </div>
+                                        )}
+                                    </Droppable>
+                                ) : (
+                                    <Droppable droppableId="builder-canvas">
+                                        {(provided) => (
+                                            <div
+                                                className="canvas-blocks"
+                                                {...provided.droppableProps}
+                                                ref={provided.innerRef}
+                                            >
+                                                {currentBlockIds.map((id, index) => {
+                                                    const block = blocksMap[id];
+                                                    if (!block) return null;
+                                                    return (
+                                                        <BlockComponent
+                                                            key={`${id}-${index}`}
+                                                            draggableId={`canvas-${id}-${index}`}
+                                                            index={index}
+                                                            block={block}
+                                                            isEditable={true}
+                                                            autoExpandTextarea={true}
+                                                            onUpdate={handleUpdateBlockInCanvas}
+                                                            onDelete={handleDeleteBlockFromCanvas}
+                                                            onMove={handleMoveBlockInCanvas}
+                                                        />
+                                                    );
+                                                })}
+                                                {provided.placeholder}
+                                            </div>
+                                        )}
+                                    </Droppable>
                                 )}
-                            </Droppable>
+                            </>
                         )}
                     </div>
 
@@ -462,29 +476,7 @@ export const BuilderView = () => {
                     </div>
                 </div>
 
-                {/* LIVE PREVIEW MODAL */}
-                {isShowingPreview && (
-                    <div className="preview-modal-overlay" onClick={() => setIsShowingPreview(false)}>
-                        <div className="preview-modal-content" onClick={e => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>Full Prompt Preview</h3>
-                                <button className="close-btn" onClick={() => setIsShowingPreview(false)}>
-                                    <X size={20} />
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <pre className="full-prompt-text">
-                                    {livePreview || "Your prompt is empty. Add blocks to build it!"}
-                                </pre>
-                            </div>
-                            <div className="modal-footer">
-                                <button className="footer-btn primary" onClick={handleCopyPreview}>
-                                    <Copy size={16} /> Copy to Clipboard
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+
             </div>
         </DragDropContext>
     );
