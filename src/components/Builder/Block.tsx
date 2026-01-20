@@ -1,5 +1,6 @@
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
+import { useEffect, useRef } from 'react';
 import type { Block, BlockType } from '../../schemas/block.schema';
 import './Block.css';
 
@@ -20,6 +21,7 @@ interface BlockProps {
     hideDelete?: boolean;
     hideAdd?: boolean;
     hideControls?: boolean;
+    autoExpandTextarea?: boolean; // New prop for canvas blocks
 }
 
 const BLOCK_COLORS: Record<BlockType, string> = {
@@ -55,10 +57,23 @@ export const BlockComponent = ({
     hideDragHandle = false,
     hideDelete = false,
     hideAdd = true,
-    hideControls = false
+    hideControls = false,
+    autoExpandTextarea = false
 }: BlockProps) => {
 
     const effectiveDraggableId = draggableId || block.id;
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Auto-resize textarea to fit content (for canvas blocks)
+    useEffect(() => {
+        if (autoExpandTextarea && textareaRef.current) {
+            const textarea = textareaRef.current;
+            // Reset height to auto to get the correct scrollHeight
+            textarea.style.height = 'auto';
+            // Set height to scrollHeight to fit all content
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [block.content, autoExpandTextarea]);
 
     const renderContent = (dragProps: any = {}, dragHandleProps: any = {}, isDragging: boolean = false, innerRef: any = null) => (
         <div
@@ -110,14 +125,19 @@ export const BlockComponent = ({
             </div>
             <div className="block-content-area">
                 <textarea
+                    ref={textareaRef}
                     className="block-textarea"
                     value={block.content}
                     onChange={(e) => onUpdate && onUpdate(block.id, e.target.value)}
                     onClick={(e) => isEditable && e.stopPropagation()}
                     placeholder={`Enter ${block.type} here...`}
-                    rows={3}
+                    rows={autoExpandTextarea ? undefined : 3}
                     readOnly={!isEditable}
-                    style={{ cursor: isEditable ? 'text' : 'pointer' }}
+                    style={{
+                        cursor: isEditable ? 'text' : 'pointer',
+                        resize: autoExpandTextarea ? 'none' : 'vertical',
+                        overflow: autoExpandTextarea ? 'hidden' : 'auto'
+                    }}
                 />
 
                 {!hideControls && onMove && isEditable && (

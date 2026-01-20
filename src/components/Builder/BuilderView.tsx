@@ -396,6 +396,7 @@ export const BuilderView = () => {
                                                     index={index}
                                                     block={block}
                                                     isEditable={true}
+                                                    autoExpandTextarea={true}
                                                     onUpdate={handleUpdateBlockInCanvas}
                                                     onDelete={handleDeleteBlockFromCanvas}
                                                     onMove={handleMoveBlockInCanvas}
