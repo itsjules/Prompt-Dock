@@ -6,11 +6,11 @@ import { RoleSchema } from './role.schema';
 
 export const StorageSchema = z.object({
     version: z.literal('1.0.0'),
-    blocks: z.record(z.string().uuid(), BlockSchema),
-    prompts: z.record(z.string().uuid(), PromptSchema),
-    collections: z.record(z.string().uuid(), CollectionSchema),
-    roles: z.record(z.string().uuid(), RoleSchema).optional(), // Optional for backward compatibility
-    activeRoleId: z.string().uuid().nullable().optional(),
+    blocks: z.record(z.string(), BlockSchema),
+    prompts: z.record(z.string(), PromptSchema),
+    collections: z.record(z.string(), CollectionSchema),
+    roles: z.record(z.string(), RoleSchema).optional(), // Keys can be any string (e.g. 'role-personal')
+    activeRoleId: z.string().nullable().optional(),
     settings: z.object({
         globalHotkey: z.string().default('CommandOrControl+Shift+P'),
         theme: z.enum(['light', 'dark', 'system']).default('system'),

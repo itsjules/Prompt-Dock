@@ -2,18 +2,60 @@ import { seedMockData } from '../../utils/mockData';
 import { useUIStore } from '../../stores/useUIStore';
 import { saveStorage } from '../../utils/storage';
 import { type StorageData } from '../../schemas/storage.schema';
-import { Database, Trash2, ShieldCheck } from 'lucide-react';
+import { Database, Trash2 } from 'lucide-react';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { usePromptStore } from '../../stores/usePromptStore';
+import { useCollectionStore } from '../../stores/useCollectionStore';
+import { useRoleStore } from '../../stores/useRoleStore';
 
 export const SettingsView = () => {
     const { setActiveView } = useUIStore();
 
-    const handleSeedData = () => {
+    const handleSeedData = async () => {
         if (confirm('This will add example prompts and blocks to your library. Continue?')) {
             seedMockData();
-            alert('Mock data added successfully!');
-            setActiveView('library');
+
+            // Force immediate save to ensure persistence
+            try {
+                const blockStore = useBlockStore.getState();
+                const promptStore = usePromptStore.getState();
+                const collectionStore = useCollectionStore.getState(); // Fix: Import useCollectionStore
+                const roleStore = useRoleStore.getState();            // Fix: Import useRoleStore
+
+                const storageData: StorageData = {
+                    version: '1.0.0',
+                    blocks: blockStore.blocks,
+                    prompts: promptStore.prompts,
+                    collections: collectionStore.collections,
+                    roles: roleStore.roles,
+                    activeRoleId: roleStore.activeRoleId,
+                    settings: {
+                        globalHotkey: 'CommandOrControl+Shift+P',
+                        theme: 'system',
+                    }
+                };
+
+                await saveStorage(storageData);
+                console.log('✅ Storage saved successfully after seeding');
+                alert('Mock data added successfully!');
+                setActiveView('library');
+            } catch (error) {
+                console.error('❌ STORAGE SAVE FAILED:', error);
+
+                // Log detailed error information
+                if (error instanceof Error) {
+                    console.error('Error name:', error.name);
+                    console.error('Error message:', error.message);
+                    console.error('Error stack:', error.stack);
+                }
+
+                // If it's a Zod error, log validation details
+                if (error && typeof error === 'object' && 'issues' in error) {
+                    console.error('Zod validation issues:', JSON.stringify((error as any).issues, null, 2));
+                }
+
+                alert('Data added but failed to save to disk. Check console for details.');
+            }
         }
     };
 
@@ -44,65 +86,7 @@ export const SettingsView = () => {
         }
     }
 
-    const handleRemoveDuplicates = () => {
-        if (!confirm('This will find duplicate blocks (same label and type) and remove the duplicates. Prompts using these blocks will be updated to use the consolidated block. Continue?')) {
-            return;
-        }
 
-        const blockStore = useBlockStore.getState();
-        const promptStore = usePromptStore.getState();
-        const allBlocks = Object.values(blockStore.blocks);
-
-        // Group by Type + Label
-        const groups: Record<string, typeof allBlocks> = {};
-
-        allBlocks.forEach(b => {
-            const key = `${b.type}:${b.label.trim()}`;
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(b);
-        });
-
-        let removedCount = 0;
-        let updatedPromptsCount = 0;
-
-        Object.values(groups).forEach(group => {
-            if (group.length > 1) {
-                // Sort by creation date (oldest first is the "original") - or just pick first
-                // If we assume the ones added by seedMockData later are the dupes, we might want to keep the oldest.
-                // But mockData adds new IDs.
-                // Let's keep the FIRST one in the list.
-                const [winner, ...losers] = group;
-
-                const loserIds = losers.map(l => l.id);
-
-                // 1. Update all prompts that use any of the loser IDs to use the winner ID
-                const allPrompts = promptStore.getAllPrompts();
-                allPrompts.forEach(p => {
-                    let hasChanges = false;
-                    const newBlockIds = p.blocks.map(bId => {
-                        if (loserIds.includes(bId)) {
-                            hasChanges = true;
-                            return winner.id;
-                        }
-                        return bId;
-                    });
-
-                    if (hasChanges) {
-                        promptStore.updatePrompt(p.id, { blocks: newBlockIds });
-                        updatedPromptsCount++;
-                    }
-                });
-
-                // 2. Delete the losers
-                loserIds.forEach(id => {
-                    blockStore.deleteBlock(id);
-                    removedCount++;
-                });
-            }
-        });
-
-        alert(`Cleanup Complete.\nRemoved ${removedCount} duplicate blocks.\nUpdated ${updatedPromptsCount} prompts.`);
-    };
 
     return (
         <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
@@ -155,26 +139,6 @@ export const SettingsView = () => {
                     >
                         <Trash2 size={18} />
                         Reset Data
-                    </button>
-
-                    <button
-                        onClick={handleRemoveDuplicates}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.75rem 1.25rem',
-                            background: 'var(--bg-tertiary)',
-                            color: 'var(--text-primary)',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '0.95rem',
-                            fontWeight: 500
-                        }}
-                    >
-                        <ShieldCheck size={18} />
-                        Remove Duplicates
                     </button>
                 </div>
                 <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>

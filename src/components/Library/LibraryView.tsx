@@ -313,11 +313,14 @@ export const LibraryView = () => {
                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                             <BlockComponent
                                                 block={block}
+                                                // @ts-ignore
+                                                index={0} // Index required by props but unused if not draggable
                                                 onUpdate={() => { }}
                                                 onDelete={() => { }}
                                                 hideDragHandle={true}
                                                 hideDelete={true}
-                                                readOnly={true}
+                                                isEditable={false}
+                                                isDraggable={false}
                                             />
                                         </div>
                                         {/* Prompt-like Actions Footer */}

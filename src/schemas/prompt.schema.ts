@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 export const PromptSchema = z.object({
-    id: z.string().uuid(),
+    id: z.string(),
     title: z.string().min(1),
     description: z.string().optional(),
-    blocks: z.array(z.string().uuid()), // Block IDs in order
+    blocks: z.array(z.string()), // Block IDs in order
     tags: z
         .object({
             style: z.array(z.string()).default([]),

@@ -10,7 +10,7 @@ export const BlockTypeEnum = z.enum([
 ]);
 
 export const BlockSchema = z.object({
-    id: z.string().uuid(),
+    id: z.string(),
     type: BlockTypeEnum,
     label: z.string().min(1),
     content: z.string().min(1),

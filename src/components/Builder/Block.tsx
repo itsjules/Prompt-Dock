@@ -6,12 +6,18 @@ import './Block.css';
 interface BlockProps {
     block: Block;
     index: number;
-    onUpdate: (id: string, content: string) => void;
-    onDelete: (id: string) => void;
+    // Actions
+    onUpdate?: (id: string, content: string) => void;
+    onDelete?: (id: string) => void;
     onMove?: (id: string, direction: 'up' | 'down') => void;
+    onClick?: () => void; // New prop for click interaction
+    // Display / Behavior Flags
+    draggableId?: string;
+    isDraggable?: boolean;
+    isEditable?: boolean;
     hideDragHandle?: boolean;
     hideDelete?: boolean;
-    readOnly?: boolean;
+    hideControls?: boolean;
 }
 
 const BLOCK_COLORS: Record<BlockType, string> = {
@@ -33,26 +39,41 @@ const BLOCK_ACCENTS: Record<BlockType, string> = {
     Constraints: '#ef9a9a',
 };
 
-export const BlockComponent = ({ block, index, onUpdate, onDelete, onMove, hideDragHandle, hideDelete, readOnly }: BlockProps) => {
+export const BlockComponent = ({
+    block,
+    index,
+    onUpdate,
+    onDelete,
+    onMove,
+    onClick,
+    draggableId,
+    isDraggable = true,
+    isEditable = true,
+    hideDragHandle = false,
+    hideDelete = false,
+    hideControls = false
+}: BlockProps) => {
 
-    // Extracted render content to be reused or wrapped
+    const effectiveDraggableId = draggableId || block.id;
+
     const renderContent = (dragProps: any = {}, dragHandleProps: any = {}, isDragging: boolean = false, innerRef: any = null) => (
         <div
-            className={`block-item ${isDragging ? 'is-dragging' : ''}`}
+            className={`block-item ${isDragging ? 'is-dragging' : ''} ${!isEditable ? 'read-only-block' : ''}`}
             style={{
                 borderLeftColor: BLOCK_ACCENTS[block.type],
                 ...dragProps.style
             }}
             ref={innerRef}
             {...dragProps}
+            onClick={onClick} // Bind onClick here
         >
             <div className="block-header" style={{ backgroundColor: BLOCK_COLORS[block.type] }}>
-                {!hideDragHandle && !readOnly && (
+                {!hideDragHandle && isDraggable && (
                     <div className="block-drag-handle" {...dragHandleProps}>
                         <GripVertical size={14} color={BLOCK_ACCENTS[block.type]} />
                     </div>
                 )}
-                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
                     <span className="block-type" style={{ color: BLOCK_ACCENTS[block.type], fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
                         {block.type.toUpperCase()}
                     </span>
@@ -60,8 +81,8 @@ export const BlockComponent = ({ block, index, onUpdate, onDelete, onMove, hideD
                         {block.label || 'Untitled Block'}
                     </span>
                 </div>
-                <div className="block-actions" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {!hideDelete && (
+                <div className="block-actions" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {!hideDelete && onDelete && (
                         <button
                             className="block-delete-btn"
                             onClick={() => onDelete(block.id)}
@@ -77,14 +98,15 @@ export const BlockComponent = ({ block, index, onUpdate, onDelete, onMove, hideD
                 <textarea
                     className="block-textarea"
                     value={block.content}
-                    onChange={(e) => onUpdate(block.id, e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => onUpdate && onUpdate(block.id, e.target.value)}
+                    onClick={(e) => isEditable && e.stopPropagation()}
                     placeholder={`Enter ${block.type} here...`}
                     rows={3}
-                    readOnly={readOnly}
+                    readOnly={!isEditable}
+                    style={{ cursor: isEditable ? 'text' : 'pointer' }}
                 />
 
-                {onMove && !readOnly && (
+                {!hideControls && onMove && isEditable && (
                     <div className="block-reorder-corner">
                         <button
                             className="corner-action-btn"
@@ -108,12 +130,12 @@ export const BlockComponent = ({ block, index, onUpdate, onDelete, onMove, hideD
         </div>
     );
 
-    if (readOnly) {
+    if (!isDraggable) {
         return renderContent();
     }
 
     return (
-        <Draggable draggableId={block.id} index={index}>
+        <Draggable draggableId={effectiveDraggableId} index={index}>
             {(provided, snapshot) => renderContent(provided.draggableProps, provided.dragHandleProps, snapshot.isDragging, provided.innerRef)}
         </Draggable>
     );
