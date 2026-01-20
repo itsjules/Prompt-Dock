@@ -1,4 +1,4 @@
-import { Trash2, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import type { Block, BlockType } from '../../schemas/block.schema';
 import './Block.css';
@@ -10,6 +10,7 @@ interface BlockProps {
     onUpdate?: (id: string, content: string) => void;
     onDelete?: (id: string) => void;
     onMove?: (id: string, direction: 'up' | 'down') => void;
+    onAdd?: (id: string) => void; // New prop for adding block to canvas
     onClick?: () => void; // New prop for click interaction
     // Display / Behavior Flags
     draggableId?: string;
@@ -17,6 +18,7 @@ interface BlockProps {
     isEditable?: boolean;
     hideDragHandle?: boolean;
     hideDelete?: boolean;
+    hideAdd?: boolean;
     hideControls?: boolean;
 }
 
@@ -45,12 +47,14 @@ export const BlockComponent = ({
     onUpdate,
     onDelete,
     onMove,
+    onAdd,
     onClick,
     draggableId,
     isDraggable = true,
     isEditable = true,
     hideDragHandle = false,
     hideDelete = false,
+    hideAdd = true,
     hideControls = false
 }: BlockProps) => {
 
@@ -82,10 +86,20 @@ export const BlockComponent = ({
                     </span>
                 </div>
                 <div className="block-actions" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {!hideAdd && onAdd && (
+                        <button
+                            className="block-add-btn"
+                            onClick={(e) => { e.stopPropagation(); onAdd(block.id); }}
+                            title="Add to canvas"
+                            style={{ color: BLOCK_ACCENTS[block.type] }}
+                        >
+                            <Plus size={16} />
+                        </button>
+                    )}
                     {!hideDelete && onDelete && (
                         <button
                             className="block-delete-btn"
-                            onClick={() => onDelete(block.id)}
+                            onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
                             title="Remove block"
                             style={{ color: BLOCK_ACCENTS[block.type] }}
                         >

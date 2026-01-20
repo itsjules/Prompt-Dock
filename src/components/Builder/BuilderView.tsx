@@ -333,10 +333,11 @@ export const BuilderView = () => {
                                             isEditable={false}
                                             isDraggable={true}
                                             hideDelete={true}
+                                            hideAdd={false}
                                             hideControls={true}
                                             onUpdate={() => { }} // No-op
                                             onDelete={() => { }} // No-op
-                                            onClick={() => handleAddBlockToCanvas(block.id)}
+                                            onAdd={handleAddBlockToCanvas}
                                         />
                                     ))}
                                     {provided.placeholder}
