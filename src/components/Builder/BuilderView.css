@@ -30,6 +30,24 @@
     /* Push search to right if present */
 }
 
+.icon-btn-ghost {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.icon-btn-ghost:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
 /* --- PANE 1: CATEGORIES --- */
 .pane-categories {
     width: 160px;
@@ -43,6 +61,36 @@
     flex: 1;
     overflow-y: auto;
     padding: 1rem 0;
+}
+
+.pane-categories-footer {
+    padding: 0.8rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: auto;
+    /* Just in case */
+    flex-shrink: 0;
+}
+
+.add-category-ghost-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    padding: 0.6rem;
+    border-radius: 6px;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.add-category-ghost-btn:hover {
+    background: var(--bg-tertiary);
+    opacity: 1;
+    color: var(--text-primary);
 }
 
 .category-tab {
@@ -67,25 +115,7 @@
     color: var(--text-primary);
 }
 
-.category-tab.add-category-btn {
-    margin: 1rem;
-    margin-top: auto;
-    width: calc(100% - 2rem);
-    border: 1px dashed var(--border-color);
-    border-radius: 6px;
-    color: var(--text-secondary);
-    justify-content: center;
-    padding: 0.6rem 0.4rem;
-    white-space: nowrap;
-    gap: 0.4rem;
-    font-size: 0.85rem;
-}
 
-.category-tab.add-category-btn:hover {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-    background: transparent;
-}
 
 .category-tab.active {
     background-color: var(--bg-primary);
@@ -485,6 +515,12 @@
 .footer-btn.success {
     background-color: #22c55e;
     border-color: #22c55e;
+    color: white;
+}
+
+.footer-btn.success:hover {
+    background-color: #16a34a;
+    border-color: #16a34a;
     color: white;
 }
 

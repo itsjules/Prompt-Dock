@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
@@ -8,6 +8,14 @@ import { BlockComponent } from './Block';
 import { BlockType } from '../../schemas/block.schema';
 import { SaveMetadataModal } from './SaveMetadataModal';
 import './BuilderView.css';
+
+// ... (keep existing imports and helpers)
+// (Note: Preserving getRelativeTime, BLOCK_TYPES, TYPE_ICONS, BLOCK_TEMPLATES, etc. implicitly by targeting correct lines for replacement or ensuring they are in the file context if I were doing a full file replace. Since I am replacing a chunk, I must be careful.)
+// Use replace_file_content carefully. 
+
+// Actually, I should use multi_replace to be safe with large files, but replace_file_content is requested for single contiguous block.
+// The file is large. I will use multi_replace for safety and precision.
+
 
 // Simple relative time helper
 const getRelativeTime = (isoString: string) => {
@@ -110,6 +118,7 @@ export const BuilderView = () => {
     const [isShowingPreview, setIsShowingPreview] = useState(false);
     const [isMetadataModalOpen, setIsMetadataModalOpen] = useState(false);
     const [metadataMode, setMetadataMode] = useState<'create' | 'edit'>('create');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     // New Block Creation State
     const [isCreatingBlock, setIsCreatingBlock] = useState(false);
@@ -157,6 +166,8 @@ export const BuilderView = () => {
             block.content.toLowerCase().includes(lowerSearch)
         );
     }, [categoryBlocks, pickerSearch]);
+
+    const [isCopied, setIsCopied] = useState(false);
 
     // --- Actions ---
 
@@ -318,6 +329,8 @@ export const BuilderView = () => {
 
     const handleCopyPreview = () => {
         navigator.clipboard.writeText(livePreview);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
     };
 
     // --- Prompt Persisting ---
@@ -353,6 +366,7 @@ export const BuilderView = () => {
             await new Promise(resolve => setTimeout(resolve, 600)); // UX delay
 
             // Get fresh state to avoid stale closure issues
+            // eslint-disable-next-line
             const { draftMetadata, currentBlockIds, loadPrompt } = useBuilderStore.getState();
 
             if (activePromptId) {
@@ -432,135 +446,161 @@ export const BuilderView = () => {
         <>
             <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="builder-layout">
-                    {/* PANE 1: CATEGORY NAVIGATION */}
-                    <div className="pane-categories">
-                        <div className="pane-header">
-                            <h3>Categories</h3>
-                        </div>
-                        <div className="category-list">
-                            {[...BLOCK_TYPES, ...customCategories.map(c => c.name)].map(type => {
-                                const Icon = getCategoryIcon(type);
-                                const isCustom = customCategories.some(c => c.name === type);
-                                return (
-                                    <div key={type} className="category-tab-wrapper">
-                                        <button
-                                            className={`category-tab ${selectedCategory === type ? 'active' : ''}`}
-                                            onClick={() => {
-                                                setSelectedCategory(type as BlockType);
-                                                setIsCreatingBlock(false);
-                                            }}
-                                        >
-                                            <Icon size={16} />
-                                            <span>{type}</span>
-                                            {selectedCategory === type && <ChevronRight className="active-indicator" size={14} />}
-                                        </button>
-                                        {isCustom && (
-                                            <div className="category-menu-container">
+                    {/* PANE 1 & 2: SIDEBARS */}
+                    {isSidebarOpen && (
+                        <>
+                            <div className="pane-categories">
+                                <div className="pane-header">
+                                    <h3>Categories</h3>
+                                </div>
+                                <div className="category-list">
+                                    {[...BLOCK_TYPES, ...customCategories.map(c => c.name)].map(type => {
+                                        const Icon = getCategoryIcon(type);
+                                        const isCustom = customCategories.some(c => c.name === type);
+                                        return (
+                                            <div key={type} className="category-tab-wrapper">
                                                 <button
-                                                    className="category-menu-btn"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setCategoryMenuOpen(categoryMenuOpen === type ? null : type);
+                                                    className={`category-tab ${selectedCategory === type ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setSelectedCategory(type as BlockType);
+                                                        setIsCreatingBlock(false);
                                                     }}
                                                 >
-                                                    <MoreVertical size={14} />
+                                                    <Icon size={16} />
+                                                    <span>{type}</span>
+                                                    {selectedCategory === type && <ChevronRight className="active-indicator" size={14} />}
                                                 </button>
-                                                {categoryMenuOpen === type && (
-                                                    <div className="category-menu-dropdown">
-                                                        <button onClick={() => handleEditCategory(type)}>
-                                                            <Edit2 size={14} />
-                                                            <span>Edit</span>
+                                                {isCustom && (
+                                                    <div className="category-menu-container">
+                                                        <button
+                                                            className="category-menu-btn"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setCategoryMenuOpen(categoryMenuOpen === type ? null : type);
+                                                            }}
+                                                        >
+                                                            <MoreVertical size={14} />
                                                         </button>
-                                                        <button onClick={() => handleDeleteCategory(type)} className="danger">
-                                                            <Trash2 size={14} />
-                                                            <span>Delete</span>
-                                                        </button>
+                                                        {categoryMenuOpen === type && (
+                                                            <div className="category-menu-dropdown">
+                                                                <button onClick={() => handleEditCategory(type)}>
+                                                                    <Edit2 size={14} />
+                                                                    <span>Edit</span>
+                                                                </button>
+                                                                <button onClick={() => handleDeleteCategory(type)} className="danger">
+                                                                    <Trash2 size={14} />
+                                                                    <span>Delete</span>
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {/* Footer / Add Category Button */}
+                                <div className="pane-categories-footer">
+                                    <button
+                                        className="add-category-ghost-btn"
+                                        onClick={() => setIsCreatingCategory(true)}
+                                    >
+                                        <Plus size={14} />
+                                        <span>Add Category</span>
+                                    </button>
+                                </div>
+                            </div>
+
+
+                            {/* PANE 2: BLOCK PICKER / BROWSER */}
+                            <div className="pane-picker">
+                                <div className="pane-header">
+                                    <h3>{selectedCategory}s</h3>
+                                    <div className="picker-header-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <div className="picker-search">
+                                            <Search size={14} />
+                                            <input
+                                                type="text"
+                                                placeholder={`Search ${selectedCategory}s...`}
+                                                value={pickerSearch}
+                                                onChange={(e) => setPickerSearch(e.target.value)}
+                                            />
+                                        </div>
+                                        <button
+                                            className="icon-btn-ghost"
+                                            onClick={() => setIsSidebarOpen(false)}
+                                            title="Close Sidebar"
+                                        >
+                                            <PanelLeftClose size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="picker-content">
+                                    {/* Create New Block Card */}
+                                    <div
+                                        className={`picker-card create-new ${isCreatingBlock ? 'active' : ''}`}
+                                        onClick={handleCreateBlockClick}
+                                    >
+                                        <Plus size={20} />
+                                        <span style={{ pointerEvents: 'none' }}>New {selectedCategory}</span>
+                                    </div>
+
+
+
+                                    {/* Block List (Draggable Source) */}
+                                    <Droppable droppableId="library-list" isDropDisabled={true}>
+                                        {(provided) => (
+                                            <div
+                                                className="blocks-list"
+                                                ref={provided.innerRef}
+                                                {...provided.droppableProps}
+                                            >
+                                                {filteredBlocks.map((block, index) => (
+                                                    <BlockComponent
+                                                        key={block.id}
+                                                        index={index}
+                                                        block={block}
+                                                        draggableId={`library-${block.id}`}
+                                                        isEditable={false}
+                                                        isDraggable={true}
+                                                        hideDelete={true}
+                                                        hideAdd={false}
+                                                        hideControls={true}
+                                                        onUpdate={() => { }} // No-op
+                                                        onDelete={() => { }} // No-op
+                                                        onAdd={handleAddBlockToCanvas}
+                                                        categoryColor={getCategoryColor(block.type)}
+                                                    />
+                                                ))}
+                                                {provided.placeholder}
+                                                {filteredBlocks.length === 0 && !isCreatingBlock && (
+                                                    <div className="empty-search">
+                                                        <p>No blocks found.</p>
                                                     </div>
                                                 )}
                                             </div>
                                         )}
-                                    </div>
-                                );
-                            })}
-                            <button
-                                className="category-tab add-category-btn"
-                                onClick={() => setIsCreatingCategory(true)}
-                            >
-                                <Plus size={16} />
-                                <span>Add Category</span>
-                            </button>
-                        </div>
-                    </div>
-
-
-                    {/* PANE 2: BLOCK PICKER / BROWSER */}
-                    <div className="pane-picker">
-                        <div className="pane-header">
-                            <h3>{selectedCategory}s</h3>
-                            <div className="picker-search">
-                                <Search size={14} />
-                                <input
-                                    type="text"
-                                    placeholder={`Search ${selectedCategory}s...`}
-                                    value={pickerSearch}
-                                    onChange={(e) => setPickerSearch(e.target.value)}
-                                />
+                                    </Droppable>
+                                </div>
                             </div>
-                        </div>
-
-                        <div className="picker-content">
-                            {/* Create New Block Card */}
-                            <div
-                                className={`picker-card create-new ${isCreatingBlock ? 'active' : ''}`}
-                                onClick={handleCreateBlockClick}
-                            >
-                                <Plus size={20} />
-                                <span>New {selectedCategory}</span>
-                            </div>
-
-
-
-                            {/* Block List (Draggable Source) */}
-                            <Droppable droppableId="library-list" isDropDisabled={true}>
-                                {(provided) => (
-                                    <div
-                                        className="blocks-list"
-                                        ref={provided.innerRef}
-                                        {...provided.droppableProps}
-                                    >
-                                        {filteredBlocks.map((block, index) => (
-                                            <BlockComponent
-                                                key={block.id}
-                                                index={index}
-                                                block={block}
-                                                draggableId={`library-${block.id}`}
-                                                isEditable={false}
-                                                isDraggable={true}
-                                                hideDelete={true}
-                                                hideAdd={false}
-                                                hideControls={true}
-                                                onUpdate={() => { }} // No-op
-                                                onDelete={() => { }} // No-op
-                                                onAdd={handleAddBlockToCanvas}
-                                                categoryColor={getCategoryColor(block.type)}
-                                            />
-                                        ))}
-                                        {provided.placeholder}
-                                        {filteredBlocks.length === 0 && !isCreatingBlock && (
-                                            <div className="empty-search">
-                                                <p>No blocks found.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </Droppable>
-                        </div>
-                    </div>
+                        </>
+                    )}
 
                     {/* PANE 3: PROMPT CANVAS */}
                     <div className="pane-canvas">
                         <div className="canvas-header">
                             <div className="canvas-title-group">
+                                {!isSidebarOpen && (
+                                    <button
+                                        className="icon-btn-ghost active"
+                                        onClick={() => setIsSidebarOpen(true)}
+                                        title="Show Sidebar"
+                                        style={{ marginRight: '0.5rem' }}
+                                    >
+                                        <PanelLeftOpen size={16} />
+                                    </button>
+                                )}
                                 <h3>{draftMetadata.title || 'Untitled Prompt'}</h3>
                                 {activePromptId && (
                                     <>
@@ -671,8 +711,12 @@ export const BuilderView = () => {
                                     </>
                                 )}
                             </button>
-                            <button className="footer-btn primary" onClick={handleCopyPreview}>
-                                <Copy size={16} /> Copy
+                            <button
+                                className={`footer-btn primary ${isCopied ? 'success' : ''}`}
+                                onClick={handleCopyPreview}
+                            >
+                                {isCopied ? <Check size={16} /> : <Copy size={16} />}
+                                {isCopied ? 'Copied!' : 'Copy'}
                             </button>
                         </div>
                     </div>
@@ -704,7 +748,7 @@ export const BuilderView = () => {
                                 <label>Name</label>
                                 <input
                                     type="text"
-                                    placeholder="e.g. Technical Prompts"
+                                    placeholder="e.g. Negative examples"
                                     value={newCategoryName}
                                     onChange={e => setNewCategoryName(e.target.value)}
                                     autoFocus
