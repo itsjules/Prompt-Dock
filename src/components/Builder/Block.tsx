@@ -1,6 +1,6 @@
-import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, Save, Star } from 'lucide-react';
+import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, Save, Star, ChevronRight } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Block, BlockType } from '../../schemas/block.schema';
 import './Block.css';
 
@@ -30,6 +30,7 @@ interface BlockProps {
     draftContent?: string;
     draftLabel?: string;
     isDirty?: boolean;
+    isCompact?: boolean; // New: Compact mode for picker
 }
 
 const BLOCK_COLORS: Record<BlockType, string> = {
@@ -98,11 +99,25 @@ export const BlockComponent = ({
     categoryColor,
     draftContent,
     draftLabel,
-    isDirty
+    isDirty,
+    isCompact = false
 }: BlockProps) => {
 
     const effectiveDraggableId = draggableId || block.id;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [isCollapsed, setIsCollapsed] = useState(isCompact);
+
+    // Toggle collapse
+    const toggleCollapse = () => {
+        if (isCompact) {
+            setIsCollapsed(!isCollapsed);
+        }
+    };
+
+    // Sync collapsed state with compact prop
+    useEffect(() => {
+        setIsCollapsed(isCompact);
+    }, [isCompact]);
 
     // Auto-resize textarea to fit content (for canvas blocks)
     useEffect(() => {
@@ -114,7 +129,7 @@ export const BlockComponent = ({
             // Actually, value is controlled, so just triggering on value change is enough.
             textarea.style.height = `${textarea.scrollHeight}px`;
         }
-    }, [block.content, draftContent, autoExpandTextarea]);
+    }, [block.content, draftContent, autoExpandTextarea, isCollapsed]);
 
     // Determine colors: use custom category color if provided, otherwise use default
     const blockColor = categoryColor ? darkenColor(categoryColor) : BLOCK_COLORS[block.type as BlockType] || '#2c2e33';
@@ -132,12 +147,18 @@ export const BlockComponent = ({
             }}
             ref={innerRef}
             {...dragProps}
-            onClick={onClick} // Bind onClick here
+            onClick={isCompact ? toggleCollapse : onClick} // Bind click to toggle in compact mode
         >
-            <div className="block-header" style={{ backgroundColor: blockColor }}>
+            <div className="block-header" style={{ backgroundColor: blockColor, cursor: isCompact ? 'pointer' : 'default' }}>
                 {!hideDragHandle && isDraggable && (
                     <div className="block-drag-handle" {...dragHandleProps}>
                         <GripVertical size={14} color={accentColor} />
+                    </div>
+                )}
+                {/* Expand Indicator for Compact Mode */}
+                {isCompact && (
+                    <div style={{ marginRight: '6px', color: accentColor, display: 'flex', alignItems: 'center' }}>
+                        {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                     </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
@@ -205,45 +226,47 @@ export const BlockComponent = ({
                     )}
                 </div>
             </div>
-            <div className="block-content-area">
-                <textarea
-                    ref={textareaRef}
-                    className="block-textarea"
-                    value={displayContent}
-                    spellCheck={false}
-                    onChange={(e) => onUpdate && onUpdate(block.id, e.target.value)}
-                    onClick={(e) => isEditable && e.stopPropagation()}
-                    placeholder={`Enter ${block.type} here...`}
-                    rows={autoExpandTextarea ? undefined : 3}
-                    readOnly={!isEditable}
-                    style={{
-                        cursor: isEditable ? 'text' : 'pointer',
-                        resize: autoExpandTextarea ? 'none' : 'vertical',
-                        overflow: autoExpandTextarea ? 'hidden' : 'auto'
-                    }}
-                />
+            {!isCollapsed && (
+                <div className="block-content-area">
+                    <textarea
+                        ref={textareaRef}
+                        className="block-textarea"
+                        value={displayContent}
+                        spellCheck={false}
+                        onChange={(e) => onUpdate && onUpdate(block.id, e.target.value)}
+                        onClick={(e) => isEditable && e.stopPropagation()}
+                        placeholder={`Enter ${block.type} here...`}
+                        rows={autoExpandTextarea ? undefined : 3}
+                        readOnly={!isEditable}
+                        style={{
+                            cursor: isEditable ? 'text' : 'pointer',
+                            resize: autoExpandTextarea ? 'none' : 'vertical',
+                            overflow: autoExpandTextarea ? 'hidden' : 'auto'
+                        }}
+                    />
 
-                {!hideControls && onMove && isEditable && (
-                    <div className="block-reorder-corner">
-                        <button
-                            className="corner-action-btn"
-                            onClick={() => onMove(block.id, 'up')}
-                            title="Move Up"
-                            style={{ color: accentColor }}
-                        >
-                            <ChevronUp size={16} />
-                        </button>
-                        <button
-                            className="corner-action-btn"
-                            onClick={() => onMove(block.id, 'down')}
-                            title="Move Down"
-                            style={{ color: accentColor }}
-                        >
-                            <ChevronDown size={16} />
-                        </button>
-                    </div>
-                )}
-            </div>
+                    {!hideControls && onMove && isEditable && (
+                        <div className="block-reorder-corner">
+                            <button
+                                className="corner-action-btn"
+                                onClick={() => onMove(block.id, 'up')}
+                                title="Move Up"
+                                style={{ color: accentColor }}
+                            >
+                                <ChevronUp size={16} />
+                            </button>
+                            <button
+                                className="corner-action-btn"
+                                onClick={() => onMove(block.id, 'down')}
+                                title="Move Down"
+                                style={{ color: accentColor }}
+                            >
+                                <ChevronDown size={16} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 

@@ -711,6 +711,8 @@ export const BuilderView = () => {
                                                         onAdd={handleAddBlockToCanvas}
                                                         onToggleFavorite={toggleBlockFavorite}
                                                         categoryColor={getCategoryColor(block.type)}
+                                                        isCompact={true}
+                                                        autoExpandTextarea={true}
                                                     />
                                                 ))}
                                                 {provided.placeholder}
