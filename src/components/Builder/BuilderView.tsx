@@ -120,8 +120,7 @@ export const BuilderView = () => {
     const [metadataMode, setMetadataMode] = useState<'create' | 'edit'>('create');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-    // Block Editing State (Local edits before save)
-    const [localBlockEdits, setLocalBlockEdits] = useState<Record<string, { label?: string, content?: string }>>({});
+    // Block Editing State (Persisted in Store)
     const [blockSaveCandidate, setBlockSaveCandidate] = useState<string | null>(null); // ID of block being saved
 
     // New Block Creation State
@@ -144,7 +143,20 @@ export const BuilderView = () => {
     const [editCategoryColor, setEditCategoryColor] = useState('');
 
     // Global Stores
-    const { activePromptId, currentBlockIds, addBlockId, removeBlockId, moveBlock, reorderBlocks, clear: clearBuilder, draftMetadata, isDirty } = useBuilderStore();
+    const {
+        activePromptId,
+        currentBlockIds,
+        addBlockId,
+        removeBlockId,
+        moveBlock,
+        reorderBlocks,
+        clear: clearBuilder,
+        draftMetadata,
+        isDirty,
+        localBlockEdits,
+        setLocalBlockEdit,
+        removeLocalBlockEdit
+    } = useBuilderStore();
     const { addBlock, updateBlock, getBlocksByType, addCategory, updateCategory, removeCategory, customCategories } = useBlockStore();
     const blocksMap = useBlockStore(state => state.blocks);
     const { addPrompt, updatePrompt, getPrompt } = usePromptStore();
@@ -281,17 +293,11 @@ export const BuilderView = () => {
     };
 
     const handleUpdateBlockInCanvas = (id: string, content: string) => {
-        setLocalBlockEdits(prev => ({
-            ...prev,
-            [id]: { ...prev[id], content }
-        }));
+        setLocalBlockEdit(id, { content });
     };
 
     const handleUpdateBlockLabel = (id: string, label: string) => {
-        setLocalBlockEdits(prev => ({
-            ...prev,
-            [id]: { ...prev[id], label }
-        }));
+        setLocalBlockEdit(id, { label });
     };
 
     const handleRequestSaveBlock = (id: string) => {
@@ -343,11 +349,7 @@ export const BuilderView = () => {
         }
 
         // Cleanup
-        setLocalBlockEdits(prev => {
-            const next = { ...prev };
-            delete next[id];
-            return next;
-        });
+        removeLocalBlockEdit(id);
         setBlockSaveCandidate(null);
     };
 
@@ -355,11 +357,7 @@ export const BuilderView = () => {
     const handleDeleteBlockFromCanvas = (id: string) => {
         removeBlockId(id);
         // Also clear local edits
-        setLocalBlockEdits(prev => {
-            const next = { ...prev };
-            delete next[id];
-            return next;
-        });
+        removeLocalBlockEdit(id);
     };
 
     const handleMoveBlockInCanvas = (id: string, direction: 'up' | 'down') => {
@@ -369,7 +367,7 @@ export const BuilderView = () => {
     const handleClearCanvas = () => {
         if (confirm('Are you sure you want to clear all blocks from the canvas?')) {
             clearBuilder();
-            setLocalBlockEdits({});
+            // local edits cleared by clearBuilder store action
         }
     };
 

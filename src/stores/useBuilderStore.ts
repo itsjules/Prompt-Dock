@@ -11,6 +11,7 @@ interface BuilderStore {
         tags: Record<string, string[]>;
     };
     isDirty: boolean;
+    localBlockEdits: Record<string, { label?: string; content?: string }>;
 
     // Actions
     setForNew: () => void;
@@ -21,6 +22,11 @@ interface BuilderStore {
     removeBlockId: (id: string) => void;
     reorderBlocks: (ids: string[]) => void;
     moveBlock: (id: string, direction: 'up' | 'down') => void;
+
+    setLocalBlockEdit: (id: string, edit: { label?: string; content?: string }) => void;
+    removeLocalBlockEdit: (id: string) => void;
+    clearLocalBlockEdits: () => void;
+
     clear: () => void;
 }
 
@@ -112,6 +118,34 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
         }
     },
 
+    // --- Local Block Edits Persistence ---
+    localBlockEdits: {},
+
+    setLocalBlockEdit: (id, edit) => {
+        set((state) => ({
+            localBlockEdits: {
+                ...state.localBlockEdits,
+                [id]: { ...state.localBlockEdits[id], ...edit }
+            },
+            isDirty: true // Local edits make the builder dirty
+        }));
+    },
+
+    removeLocalBlockEdit: (id) => {
+        set((state) => {
+            const newEdits = { ...state.localBlockEdits };
+            delete newEdits[id];
+            return { localBlockEdits: newEdits };
+            // Note: We don't necessarily reset isDirty here because other changes might exist,
+            // but removing an edit might return it to "clean" state. 
+            // For simplicity, we assume if you are interacting, it's dirty or we rely on other signals.
+        });
+    },
+
+    clearLocalBlockEdits: () => {
+        set({ localBlockEdits: {} });
+    },
+
     clear: () => {
         // Note: This just clears the IDs from the builder view. 
         // It does NOT delete the blocks from the BlockStore 
@@ -121,6 +155,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
             currentBlockIds: [],
             // Reset metadata for new prompt on clear
             draftMetadata: DEFAULT_METADATA,
+            localBlockEdits: {}, // Clear local edits too
             isDirty: false // Reset dirty state as we are essentially starting fresh
         });
     }

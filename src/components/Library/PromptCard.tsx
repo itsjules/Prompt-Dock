@@ -1,4 +1,4 @@
-import { Play, Copy, Star, FolderPlus } from 'lucide-react';
+import { Play, Copy, Star, FolderPlus, Trash2 } from 'lucide-react';
 import type { Prompt } from '../../schemas/prompt.schema';
 import { usePromptStore } from '../../stores/usePromptStore';
 import './PromptCard.css';
@@ -7,9 +7,10 @@ interface PromptCardProps {
     prompt: Prompt;
     onUse: (prompt: Prompt) => void;
     onAddToCollection?: (prompt: Prompt) => void;
+    onDelete?: (prompt: Prompt) => void;
 }
 
-export const PromptCard = ({ prompt, onUse, onAddToCollection }: PromptCardProps) => {
+export const PromptCard = ({ prompt, onUse, onAddToCollection, onDelete }: PromptCardProps) => {
     const { toggleFavorite } = usePromptStore();
 
     const handleCopy = (e: React.MouseEvent) => {
@@ -52,6 +53,11 @@ export const PromptCard = ({ prompt, onUse, onAddToCollection }: PromptCardProps
                 {onAddToCollection && (
                     <button className="action-btn" onClick={(e) => { e.stopPropagation(); onAddToCollection(prompt); }} title="Add to Collection">
                         <FolderPlus size={16} />
+                    </button>
+                )}
+                {onDelete && (
+                    <button className="action-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(prompt); }} title="Delete Prompt">
+                        <Trash2 size={16} />
                     </button>
                 )}
                 <button className="action-btn primary" onClick={() => onUse(prompt)} title="Use this prompt">

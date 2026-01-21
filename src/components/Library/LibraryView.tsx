@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Fuse from 'fuse.js';
-import { Star, Clock, Grid, Tag, FolderPlus, Plus, Copy } from 'lucide-react';
+import { Star, Clock, Grid, Tag, FolderPlus, Plus, Copy, Trash2, Filter, X, CheckSquare, ChevronDown } from 'lucide-react';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBlockStore } from '../../stores/useBlockStore';
@@ -12,12 +12,13 @@ import { SearchBar } from './SearchBar';
 import { BlockComponent } from '../Builder/Block'; // Reuse Block Component
 import { AddToCollectionModal } from './AddToCollectionModal';
 import { RoleSelector } from '../Role/RoleSelector';
+import type { BlockType } from '../../schemas/block.schema';
 import './LibraryView.css';
 
 export const LibraryView = () => {
-    const { getAllPrompts, getFavorites: getFavPrompts, getRecents } = usePromptStore();
+    const { getAllPrompts, getFavorites: getFavPrompts, getRecents, deletePrompt } = usePromptStore();
     const { getAllCollections } = useCollectionStore();
-    const { getAllBlocks, getFavoriteBlocks: getFavBlocks } = useBlockStore();
+    const { getAllBlocks, getFavoriteBlocks: getFavBlocks, deleteBlock } = useBlockStore();
 
     const { searchQuery, setActiveView, libraryTab, setLibraryTab, activeCollectionId, setActiveCollectionId } = useUIStore();
     const { loadPrompt, addBlockId } = useBuilderStore();
@@ -95,6 +96,15 @@ export const LibraryView = () => {
         return [...pItems, ...bItems];
     }, [promtData, blockData]);
 
+    // Filter State
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [selectedBlockTypes, setSelectedBlockTypes] = useState<Set<BlockType>>(new Set());
+    // Default to showing both
+    const [filterItemTypes, setFilterItemTypes] = useState<Set<'prompt' | 'block'>>(new Set(['prompt', 'block']));
+
+    // Filter Options
+    const blockTypes: BlockType[] = ['Role', 'Task', 'Context', 'Output', 'Style', 'Constraints'];
+
     const fuse = useMemo(() => {
         return new Fuse(searchItems, {
             keys: [
@@ -124,18 +134,35 @@ export const LibraryView = () => {
             results = fuseResults.map(r => r.item);
         }
 
-        // 2. Tag Filtering (Strict)
+        // 1.5 Item Type Filtering (Prompts vs Blocks)
+        if (filterItemTypes.size < 2) { // If both are selected, no filtering needed
+            results = results.filter(item => filterItemTypes.has(item.type));
+        }
+
+        // 2. Block Type Filtering
+        if (selectedBlockTypes.size > 0) {
+            results = results.filter(item => {
+                // If block types are selected, we are looking for blocks of those types.
+                // Prompts do not have block types, so they are filtered out.
+                if (item.type !== 'block') return false;
+                return selectedBlockTypes.has((item.original as any).type);
+            });
+        }
+
+        // 3. Tag Filtering
         if (selectedTags.size > 0) {
             results = results.filter(item => {
-                if (item.type === 'block') return true;
+                // If filtering by tags, blocks (which don't have tags in this schema) are hidden.
+                if (item.type === 'block') return false;
                 if (!item.tags) return false;
-                // check intersection
                 const itemTags = [...(item.tags.style || []), ...(item.tags.topic || []), ...(item.tags.technique || [])];
+
+                // Check if ALL selected tags match (AND logic)
                 return [...selectedTags].every(t => itemTags.includes(t));
             });
         }
 
-        // 3. Role-Based Re-ranking (The "Reordering" requirement)
+        // 4. Role-Based Re-ranking (The "Reordering" requirement)
         // We calculate a score for each item based on the active role's keywords vs item metadata
 
         if (activeRoleId) {
@@ -158,14 +185,43 @@ export const LibraryView = () => {
                     return scoreB - scoreA; // Descending order of relevance
                 }
                 // Tie-breaker: Recency (Updated At)
-                const dateA = new Date(a.original.updatedAt).getTime();
-                const dateB = new Date(b.original.updatedAt).getTime();
+                const dateA = new Date(a.original.updatedAt || 0).getTime();
+                const dateB = new Date(b.original.updatedAt || 0).getTime();
                 return dateB - dateA;
             });
         }
 
         return results;
-    }, [fuse, searchQuery, searchItems, selectedTags, activeRoleId, getRelevanceScore]);
+    }, [fuse, searchQuery, searchItems, selectedTags, selectedBlockTypes, filterItemTypes, activeRoleId, getRelevanceScore]);
+
+    const availableFiltersCount = selectedTags.size + selectedBlockTypes.size + (filterItemTypes.size < 2 ? 1 : 0);
+
+    const toggleItemType = (type: 'prompt' | 'block') => {
+        const newSet = new Set(filterItemTypes);
+        if (newSet.has(type)) {
+            // Don't allow unchecking the last one (always show at least one type)
+            if (newSet.size > 1) newSet.delete(type);
+        } else {
+            newSet.add(type);
+        }
+        setFilterItemTypes(newSet);
+    };
+
+    const toggleBlockType = (type: BlockType) => {
+        const newSet = new Set(selectedBlockTypes);
+        if (newSet.has(type)) {
+            newSet.delete(type);
+        } else {
+            newSet.add(type);
+        }
+        setSelectedBlockTypes(newSet);
+    };
+
+    const clearFilters = () => {
+        setSelectedTags(new Set());
+        setSelectedBlockTypes(new Set());
+        setFilterItemTypes(new Set(['prompt', 'block']));
+    };
 
     // --- HANDLERS ---
 
@@ -185,6 +241,18 @@ export const LibraryView = () => {
 
     const handleAddToCollection = (id: string, type: 'prompt' | 'block', title: string) => {
         setCollectionModalItem({ id, type, title });
+    };
+
+    const handleDeletePrompt = (prompt: any) => {
+        if (confirm(`Are you sure you want to delete "${prompt.title}"? This cannot be undone.`)) {
+            deletePrompt(prompt.id);
+        }
+    };
+
+    const handleDeleteBlock = (block: any) => {
+        if (confirm(`Are you sure you want to delete "${block.label}"? This cannot be undone.`)) {
+            deleteBlock(block.id);
+        }
     };
 
     const toggleTag = (tag: string) => {
@@ -240,6 +308,106 @@ export const LibraryView = () => {
                     <Grid size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
                     Collections
                 </button>
+
+                <div style={{ flex: 1 }} /> {/* Spacer to push filter to right */}
+
+                <div className="filter-popover-wrapper" style={{ position: 'relative' }}>
+                    <button
+                        className={`filter-toggle-btn ${availableFiltersCount > 0 ? 'active' : ''}`}
+                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    >
+                        <Filter size={14} />
+                        <span>Filter</span>
+                        {availableFiltersCount > 0 && <span className="filter-badge">{availableFiltersCount}</span>}
+                        <ChevronDown size={14} style={{ opacity: 0.5 }} />
+                    </button>
+
+                    {isFilterOpen && (
+                        <>
+                            <div className="filter-popover-backdrop" onClick={() => setIsFilterOpen(false)} />
+                            <div className="filter-popover">
+                                <div className="filter-section">
+                                    <h4>Item Type</h4>
+                                    <div className="filter-checkbox-grid">
+                                        <label className="checkbox-label">
+                                            <input
+                                                type="checkbox"
+                                                checked={filterItemTypes.has('prompt')}
+                                                onChange={() => toggleItemType('prompt')}
+                                            />
+                                            <span className="custom-checkbox">
+                                                {filterItemTypes.has('prompt') && <CheckSquare size={12} />}
+                                            </span>
+                                            Full Prompts
+                                        </label>
+                                        <label className="checkbox-label">
+                                            <input
+                                                type="checkbox"
+                                                checked={filterItemTypes.has('block')}
+                                                onChange={() => toggleItemType('block')}
+                                            />
+                                            <span className="custom-checkbox">
+                                                {filterItemTypes.has('block') && <CheckSquare size={12} />}
+                                            </span>
+                                            Blocks
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="filter-divider" />
+
+                                <div className="filter-section">
+                                    <h4>Block Types</h4>
+                                    <div className="filter-checkbox-grid">
+                                        {blockTypes.map(type => (
+                                            <label key={type} className="checkbox-label">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedBlockTypes.has(type)}
+                                                    onChange={() => toggleBlockType(type)}
+                                                />
+                                                <span className="custom-checkbox">
+                                                    {selectedBlockTypes.has(type) && <CheckSquare size={12} />}
+                                                </span>
+                                                {type}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="filter-divider" />
+
+                                <div className="filter-section">
+                                    <h4>Tags</h4>
+                                    <div className="filter-tags-cloud">
+                                        {allUniqueTags.length === 0 ? (
+                                            <p className="empty-text">No tags available.</p>
+                                        ) : (
+                                            allUniqueTags.map(tag => (
+                                                <button
+                                                    key={tag}
+                                                    className={`filter-chip small ${selectedTags.has(tag) ? 'active' : ''}`}
+                                                    onClick={() => toggleTag(tag)}
+                                                >
+                                                    {tag}
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="filter-footer">
+                                    <button className="text-btn small" onClick={clearFilters}>
+                                        Clear All
+                                    </button>
+                                    <button className="btn-primary small" onClick={() => setIsFilterOpen(false)}>
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
 
 
@@ -263,28 +431,23 @@ export const LibraryView = () => {
                 </div>
             )}
 
-            {/* Filter Bar */}
-            {allUniqueTags.length > 0 && (
-                <div className="filter-bar">
-                    {allUniqueTags.map(tag => (
-                        <button
-                            key={tag}
-                            className={`filter-chip ${selectedTags.has(tag) ? 'active' : ''}`}
-                            onClick={() => toggleTag(tag)}
-                        >
-                            <Tag size={12} />
-                            {tag}
-                        </button>
+            {/* Active Filters Display (Summary) - Moved out of filter-controls wrapper */}
+            {availableFiltersCount > 0 && (
+                <div className="active-filters-summary">
+                    {[...selectedBlockTypes].map(type => (
+                        <span key={type} className="active-filter-pill">
+                            {type}
+                            <button onClick={() => toggleBlockType(type as any)}><X size={10} /></button>
+                        </span>
                     ))}
-                    {selectedTags.size > 0 && (
-                        <button
-                            className="text-btn"
-                            style={{ fontSize: '0.8rem', marginLeft: '0.5rem' }}
-                            onClick={() => setSelectedTags(new Set())}
-                        >
-                            Clear Filters
-                        </button>
-                    )}
+                    {[...selectedTags].map(tag => (
+                        <span key={tag} className="active-filter-pill tag-pill">
+                            <Tag size={10} />
+                            {tag}
+                            <button onClick={() => toggleTag(tag)}><X size={10} /></button>
+                        </span>
+                    ))}
+                    <button className="clear-all-text-btn" onClick={clearFilters}>Clear all</button>
                 </div>
             )}
 
@@ -304,6 +467,7 @@ export const LibraryView = () => {
                                         prompt={prompt}
                                         onUse={() => handleUsePrompt(item.id)}
                                         onAddToCollection={(p) => handleAddToCollection(p.id, 'prompt', p.title)}
+                                        onDelete={handleDeletePrompt}
                                     />
                                 );
                             } else if (item.type === 'block') {
@@ -338,6 +502,13 @@ export const LibraryView = () => {
                                                 title="Add to Collection"
                                             >
                                                 <FolderPlus size={16} />
+                                            </button>
+                                            <button
+                                                className="action-btn danger"
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteBlock(block); }}
+                                                title="Delete Block"
+                                            >
+                                                <Trash2 size={16} />
                                             </button>
                                             <button
                                                 className="action-btn primary"
