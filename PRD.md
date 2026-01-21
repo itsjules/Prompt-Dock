@@ -310,15 +310,27 @@ As a user, I want to build prompts from reusable blocks instead of starting from
 
 ---
 
-### Module 4 — Feedback & Reuse Signals (P1)
+### Module 4 — Feedback & Reuse Signals (DONE)
 
 **User Story**  
 As a user, I want to mark prompts and prompt blocks that worked well so I can easily reuse them.
 
+**Implementation Results**
+- **Favorites System:**
+    - **Universal Star Action:** Blocks and Prompts can be toggled as favorites directly from the Builder, Library, or Home view.
+    - **Unified Favorites View:** The Home Dashboard displays a mixed, sorted list of favorite prompts and blocks for instant access.
+    - **Builder Filtering:** The Builder sidebar includes a quick-filter toggle to show *only* favorite blocks, speeding up assembly.
+- **Smart Usage Tracking:**
+    - **Usage Counts:** The system tracks how often each block and prompt is used (copied or opened).
+    - **Recents Logic:** "Recent" lists are automatically populated based on usage timestamps, ensuring the most relevant items are always at hand.
+- **UI Refinements:**
+    - **Compact Picker Cards:** Library blocks in the builder default to a compact, collapsed view to reduce clutter, auto-expanding on click or interaction.
+    - **Consistent Grid Layouts:** Dashboard widgets enforce structured layouts (min-width, limited items) to maintain visual hierarchy.
+
 **Acceptance Criteria**
-- Star or thumbs-up rating for prompts & blocks (mark as favorites)  
-- Filter and sort by rating & usage count  
-- Usage count tracked per prompt & block (how often was it copied from the prompt builder to clipboard)
+- [x] Star or thumbs-up rating for prompts & blocks (mark as favorites)  
+- [x] Filter and sort by rating & usage count (Favorites View + Relevance Sorting)
+- [x] Usage count tracked per prompt & block (used for Recents & Sorting)
 
 
 ---
