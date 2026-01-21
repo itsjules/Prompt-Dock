@@ -22,6 +22,7 @@ interface BlockProps {
     hideAdd?: boolean;
     hideControls?: boolean;
     autoExpandTextarea?: boolean; // New prop for canvas blocks
+    categoryColor?: string; // Custom category color
 }
 
 const BLOCK_COLORS: Record<BlockType, string> = {
@@ -43,6 +44,31 @@ const BLOCK_ACCENTS: Record<BlockType, string> = {
     Constraints: '#ef9a9a',
 };
 
+// Helper functions to create dark background and light accent from a base color
+const darkenColor = (hex: string): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+
+    const darkR = Math.floor(r * 0.25);
+    const darkG = Math.floor(g * 0.25);
+    const darkB = Math.floor(b * 0.25);
+
+    return `#${darkR.toString(16).padStart(2, '0')}${darkG.toString(16).padStart(2, '0')}${darkB.toString(16).padStart(2, '0')}`;
+};
+
+const lightenColor = (hex: string): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+
+    const lightR = Math.floor(r + (255 - r) * 0.5);
+    const lightG = Math.floor(g + (255 - g) * 0.5);
+    const lightB = Math.floor(b + (255 - b) * 0.5);
+
+    return `#${lightR.toString(16).padStart(2, '0')}${lightG.toString(16).padStart(2, '0')}${lightB.toString(16).padStart(2, '0')}`;
+};
+
 export const BlockComponent = ({
     block,
     index,
@@ -58,7 +84,8 @@ export const BlockComponent = ({
     hideDelete = false,
     hideAdd = true,
     hideControls = false,
-    autoExpandTextarea = false
+    autoExpandTextarea = false,
+    categoryColor
 }: BlockProps) => {
 
     const effectiveDraggableId = draggableId || block.id;
@@ -75,28 +102,32 @@ export const BlockComponent = ({
         }
     }, [block.content, autoExpandTextarea]);
 
+    // Determine colors: use custom category color if provided, otherwise use default
+    const blockColor = categoryColor ? darkenColor(categoryColor) : BLOCK_COLORS[block.type as BlockType] || '#2c2e33';
+    const accentColor = categoryColor ? lightenColor(categoryColor) : BLOCK_ACCENTS[block.type as BlockType] || '#9065B0';
+
     const renderContent = (dragProps: any = {}, dragHandleProps: any = {}, isDragging: boolean = false, innerRef: any = null) => (
         <div
             className={`block-item ${isDragging ? 'is-dragging' : ''} ${!isEditable ? 'read-only-block' : ''}`}
             style={{
-                borderLeftColor: BLOCK_ACCENTS[block.type],
+                borderLeftColor: accentColor,
                 ...dragProps.style
             }}
             ref={innerRef}
             {...dragProps}
             onClick={onClick} // Bind onClick here
         >
-            <div className="block-header" style={{ backgroundColor: BLOCK_COLORS[block.type] }}>
+            <div className="block-header" style={{ backgroundColor: blockColor }}>
                 {!hideDragHandle && isDraggable && (
                     <div className="block-drag-handle" {...dragHandleProps}>
-                        <GripVertical size={14} color={BLOCK_ACCENTS[block.type]} />
+                        <GripVertical size={14} color={accentColor} />
                     </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-                    <span className="block-type" style={{ color: BLOCK_ACCENTS[block.type], fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
+                    <span className="block-type" style={{ color: accentColor, fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
                         {block.type.toUpperCase()}
                     </span>
-                    <span className="block-label" style={{ color: BLOCK_ACCENTS[block.type], fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span className="block-label" style={{ color: accentColor, fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {block.label || 'Untitled Block'}
                     </span>
                 </div>
@@ -106,7 +137,7 @@ export const BlockComponent = ({
                             className="block-add-btn"
                             onClick={(e) => { e.stopPropagation(); onAdd(block.id); }}
                             title="Add to canvas"
-                            style={{ color: BLOCK_ACCENTS[block.type] }}
+                            style={{ color: accentColor }}
                         >
                             <Plus size={16} />
                         </button>
@@ -116,7 +147,7 @@ export const BlockComponent = ({
                             className="block-delete-btn"
                             onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
                             title="Remove block"
-                            style={{ color: BLOCK_ACCENTS[block.type] }}
+                            style={{ color: accentColor }}
                         >
                             <Trash2 size={14} />
                         </button>
@@ -146,7 +177,7 @@ export const BlockComponent = ({
                             className="corner-action-btn"
                             onClick={() => onMove(block.id, 'up')}
                             title="Move Up"
-                            style={{ color: BLOCK_ACCENTS[block.type] }}
+                            style={{ color: accentColor }}
                         >
                             <ChevronUp size={16} />
                         </button>
@@ -154,7 +185,7 @@ export const BlockComponent = ({
                             className="corner-action-btn"
                             onClick={() => onMove(block.id, 'down')}
                             title="Move Down"
-                            style={{ color: BLOCK_ACCENTS[block.type] }}
+                            style={{ color: accentColor }}
                         >
                             <ChevronDown size={16} />
                         </button>

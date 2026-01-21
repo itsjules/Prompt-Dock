@@ -67,6 +67,26 @@
     color: var(--text-primary);
 }
 
+.category-tab.add-category-btn {
+    margin: 1rem;
+    margin-top: auto;
+    width: calc(100% - 2rem);
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    justify-content: center;
+    padding: 0.6rem 0.4rem;
+    white-space: nowrap;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.category-tab.add-category-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: transparent;
+}
+
 .category-tab.active {
     background-color: var(--bg-primary);
     /* Blend into middle pane if needed, or stick out */
@@ -568,6 +588,143 @@
     background: transparent;
 }
 
+/* Category Creation Toast/Modal */
+.category-creation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.category-creation-toast {
+    background: #1e1f24;
+    /* Darker theme background */
+    border: 1px solid var(--border-color);
+    /* Subtle border */
+    border-radius: 12px;
+    width: 420px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    /* Increased gap */
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.toast-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.toast-header button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+}
+
+.toast-header button:hover {
+    color: var(--text-primary);
+}
+
+/* Form Groups */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-group input,
+.form-group textarea {
+    background: #2b2d31;
+    /* Input background */
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 0.75rem;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    background: #2b2d31;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.toast-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.toast-actions button {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.toast-actions button.secondary {
+    background: #2b2d31;
+    color: var(--text-primary);
+    border: 1px solid transparent;
+}
+
+.toast-actions button.secondary:hover {
+    background: #35373c;
+}
+
+.toast-actions button.primary {
+    background: var(--accent-primary);
+    /* Use theme accent (purple) */
+    color: white;
+}
+
+.toast-actions button.primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
 ::-webkit-scrollbar-thumb {
     background: var(--bg-tertiary);
     border-radius: 4px;
@@ -579,4 +736,139 @@
 
 ::-webkit-scrollbar-corner {
     background: transparent;
+}
+
+/* Color Picker */
+.color-picker-grid {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    align-items: center;
+}
+
+.color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.color-swatch:hover {
+    transform: scale(1.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.color-swatch.selected {
+    border-color: white;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.color-swatch.selected svg {
+    width: 12px;
+    height: 12px;
+}
+
+.color-swatch.used {
+    opacity: 0.5;
+    position: relative;
+}
+
+.color-swatch.used::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Category Color Indicator */
+.category-color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: auto;
+    margin-right: 0.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Category Menu */
+.category-tab-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.category-menu-container {
+    position: relative;
+}
+
+.category-menu-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.category-tab-wrapper:hover .category-menu-btn {
+    opacity: 1;
+}
+
+.category-menu-btn:hover {
+    color: var(--text-primary);
+}
+
+.category-menu-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #2b2d31;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 120px;
+    margin-top: 4px;
+}
+
+.category-menu-dropdown button {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+}
+
+.category-menu-dropdown button:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.category-menu-dropdown button.danger {
+    color: #ef5350;
+}
+
+.category-menu-dropdown button.danger:hover {
+    background: rgba(239, 83, 80, 0.1);
 }

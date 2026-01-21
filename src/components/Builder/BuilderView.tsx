@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X, Eye } from 'lucide-react';
+import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
@@ -48,6 +48,30 @@ const BLOCK_TEMPLATES: Record<BlockType, { hint: string, template: string }> = {
     }
 };
 
+const getCategoryIcon = (type: string) => {
+    return (TYPE_ICONS as any)[type] || Folder;
+};
+
+const getCategoryTemplate = (type: string) => {
+    return (BLOCK_TEMPLATES as any)[type] || {
+        hint: "Define the content for this block.",
+        template: "Enter content here..."
+    };
+};
+
+// Notion-inspired color palette (lighter, more vibrant)
+const CATEGORY_COLORS = [
+    { name: 'Gray', value: '#787774' },
+    { name: 'Brown', value: '#9F6B53' },
+    { name: 'Orange', value: '#D9730D' },
+    { name: 'Yellow', value: '#DFAB01' },
+    { name: 'Green', value: '#0F7B6C' },
+    { name: 'Blue', value: '#0B6E99' },
+    { name: 'Purple', value: '#6940A5' },
+    { name: 'Pink', value: '#AD1A72' },
+    { name: 'Red', value: '#E03E3E' },
+];
+
 export const BuilderView = () => {
     const [selectedCategory, setSelectedCategory] = useState<BlockType>('Role');
     const [pickerSearch, setPickerSearch] = useState('');
@@ -63,11 +87,31 @@ export const BuilderView = () => {
     const [newBlockLabel, setNewBlockLabel] = useState('');
     const [newBlockContent, setNewBlockContent] = useState('');
 
+    // Category Creation State
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [newCategoryDesc, setNewCategoryDesc] = useState('');
+    const [selectedColor, setSelectedColor] = useState(CATEGORY_COLORS[0].value);
+
+    // Category Menu State
+    const [categoryMenuOpen, setCategoryMenuOpen] = useState<string | null>(null);
+    const [isEditingCategory, setIsEditingCategory] = useState(false);
+    const [editingCategoryName, setEditingCategoryName] = useState('');
+    const [editCategoryNewName, setEditCategoryNewName] = useState('');
+    const [editCategoryDesc, setEditCategoryDesc] = useState('');
+    const [editCategoryColor, setEditCategoryColor] = useState('');
+
     // Global Stores
     const { activePromptId, currentBlockIds, addBlockId, removeBlockId, moveBlock, reorderBlocks, clear: clearBuilder } = useBuilderStore();
-    const { addBlock, updateBlock, getBlocksByType } = useBlockStore();
+    const { addBlock, updateBlock, getBlocksByType, addCategory, updateCategory, removeCategory, customCategories } = useBlockStore();
     const blocksMap = useBlockStore(state => state.blocks);
     const { addPrompt, updatePrompt, getPrompt } = usePromptStore();
+
+    // Helper to get category color
+    const getCategoryColor = (type: string) => {
+        const customCat = customCategories.find(c => c.name === type);
+        return customCat?.color;
+    };
 
     // Derived Data: Available Blocks in Category
     const categoryBlocks = useMemo(() => {
@@ -89,9 +133,87 @@ export const BuilderView = () => {
         addBlockId(id);
     };
 
+    const handleCreateCategory = (andCreateBlock: boolean) => {
+        if (!newCategoryName.trim()) {
+            alert("Category Name is required.");
+            return;
+        }
+
+        // Check if exists
+        const exists = BLOCK_TYPES.includes(newCategoryName as any) || customCategories.some(c => c.name === newCategoryName);
+        if (exists) {
+            alert("Category already exists.");
+            return;
+        }
+
+        addCategory({ name: newCategoryName, description: newCategoryDesc, color: selectedColor });
+
+        if (andCreateBlock) {
+            setSelectedCategory(newCategoryName as BlockType);
+            setIsCreatingBlock(true);
+            setNewBlockLabel('');
+            setNewBlockContent(''); // No template for custom yet
+        }
+
+        setIsCreatingCategory(false);
+        setNewCategoryName('');
+        setNewCategoryDesc('');
+        setSelectedColor(CATEGORY_COLORS[0].value);
+    };
+
+    const handleEditCategory = (categoryName: string) => {
+        const category = customCategories.find(c => c.name === categoryName);
+        if (!category) return;
+
+        setEditingCategoryName(categoryName);
+        setEditCategoryNewName(category.name);
+        setEditCategoryDesc(category.description);
+        setEditCategoryColor(category.color);
+        setIsEditingCategory(true);
+        setCategoryMenuOpen(null);
+    };
+
+    const handleSaveEditCategory = () => {
+        if (!editCategoryNewName.trim()) {
+            alert("Category Name is required.");
+            return;
+        }
+
+        const exists = (BLOCK_TYPES.includes(editCategoryNewName as any) ||
+            customCategories.some(c => c.name === editCategoryNewName && c.name !== editingCategoryName));
+        if (exists) {
+            alert("Category name already exists.");
+            return;
+        }
+
+        updateCategory(editingCategoryName, {
+            name: editCategoryNewName,
+            description: editCategoryDesc,
+            color: editCategoryColor
+        });
+
+        if (selectedCategory === editingCategoryName) {
+            setSelectedCategory(editCategoryNewName as BlockType);
+        }
+
+        setIsEditingCategory(false);
+        setEditingCategoryName('');
+    };
+
+    const handleDeleteCategory = (categoryName: string) => {
+        if (confirm(`Are you sure you want to delete the "${categoryName}" category?`)) {
+            removeCategory(categoryName);
+            setCategoryMenuOpen(null);
+
+            if (selectedCategory === categoryName) {
+                setSelectedCategory('Role');
+            }
+        }
+    };
+
     const handleCreateBlockClick = () => {
         setNewBlockLabel('');
-        setNewBlockContent(BLOCK_TEMPLATES[selectedCategory].template);
+        setNewBlockContent(getCategoryTemplate(selectedCategory).template);
         setIsCreatingBlock(true);
     };
 
@@ -232,252 +354,411 @@ export const BuilderView = () => {
     };
 
     return (
-        <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="builder-layout">
-                {/* PANE 1: CATEGORY NAVIGATION */}
-                <div className="pane-categories">
-                    <div className="pane-header">
-                        <h3>Categories</h3>
-                    </div>
-                    <div className="category-list">
-                        {BLOCK_TYPES.map(type => {
-                            const Icon = TYPE_ICONS[type];
-                            return (
-                                <button
-                                    key={type}
-                                    className={`category-tab ${selectedCategory === type ? 'active' : ''}`}
-                                    onClick={() => {
-                                        setSelectedCategory(type);
-                                        setIsCreatingBlock(false);
-                                    }}
-                                >
-                                    <Icon size={16} />
-                                    <span>{type}</span>
-                                    {selectedCategory === type && <ChevronRight className="active-indicator" size={14} />}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* PANE 2: BLOCK PICKER / BROWSER */}
-                <div className="pane-picker">
-                    <div className="pane-header">
-                        <h3>{selectedCategory}s</h3>
-                        <div className="picker-search">
-                            <Search size={14} />
-                            <input
-                                type="text"
-                                placeholder={`Search ${selectedCategory}s...`}
-                                value={pickerSearch}
-                                onChange={(e) => setPickerSearch(e.target.value)}
-                            />
+        <>
+            <DragDropContext onDragEnd={handleDragEnd}>
+                <div className="builder-layout">
+                    {/* PANE 1: CATEGORY NAVIGATION */}
+                    <div className="pane-categories">
+                        <div className="pane-header">
+                            <h3>Categories</h3>
+                        </div>
+                        <div className="category-list">
+                            {[...BLOCK_TYPES, ...customCategories.map(c => c.name)].map(type => {
+                                const Icon = getCategoryIcon(type);
+                                const isCustom = customCategories.some(c => c.name === type);
+                                return (
+                                    <div key={type} className="category-tab-wrapper">
+                                        <button
+                                            className={`category-tab ${selectedCategory === type ? 'active' : ''}`}
+                                            onClick={() => {
+                                                setSelectedCategory(type as BlockType);
+                                                setIsCreatingBlock(false);
+                                            }}
+                                        >
+                                            <Icon size={16} />
+                                            <span>{type}</span>
+                                            {selectedCategory === type && <ChevronRight className="active-indicator" size={14} />}
+                                        </button>
+                                        {isCustom && (
+                                            <div className="category-menu-container">
+                                                <button
+                                                    className="category-menu-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setCategoryMenuOpen(categoryMenuOpen === type ? null : type);
+                                                    }}
+                                                >
+                                                    <MoreVertical size={14} />
+                                                </button>
+                                                {categoryMenuOpen === type && (
+                                                    <div className="category-menu-dropdown">
+                                                        <button onClick={() => handleEditCategory(type)}>
+                                                            <Edit2 size={14} />
+                                                            <span>Edit</span>
+                                                        </button>
+                                                        <button onClick={() => handleDeleteCategory(type)} className="danger">
+                                                            <Trash2 size={14} />
+                                                            <span>Delete</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                            <button
+                                className="category-tab add-category-btn"
+                                onClick={() => setIsCreatingCategory(true)}
+                            >
+                                <Plus size={16} />
+                                <span>Add Category</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div className="picker-content">
-                        {/* Create New Block Card */}
-                        <div
-                            className={`picker-card create-new ${isCreatingBlock ? 'active' : ''}`}
-                            onClick={handleCreateBlockClick}
-                        >
-                            <Plus size={20} />
-                            <span>New {selectedCategory}</span>
-                        </div>
 
-                        {/* Creation Form (Inline) */}
-                        {isCreatingBlock && (
-                            <div className="block-creation-form">
-                                <div className="form-header">
-                                    <span>New {selectedCategory}</span>
-                                    <button className="close-btn" onClick={() => setIsCreatingBlock(false)}><X size={14} /></button>
-                                </div>
-                                <div className="form-hint">
-                                    {BLOCK_TEMPLATES[selectedCategory].hint}
-                                </div>
+                    {/* PANE 2: BLOCK PICKER / BROWSER */}
+                    <div className="pane-picker">
+                        <div className="pane-header">
+                            <h3>{selectedCategory}s</h3>
+                            <div className="picker-search">
+                                <Search size={14} />
                                 <input
                                     type="text"
-                                    placeholder="Label (e.g. 'Frontend Expert')"
-                                    value={newBlockLabel}
-                                    onChange={(e) => setNewBlockLabel(e.target.value)}
-                                    autoFocus
-                                    className="creation-input"
+                                    placeholder={`Search ${selectedCategory}s...`}
+                                    value={pickerSearch}
+                                    onChange={(e) => setPickerSearch(e.target.value)}
                                 />
-                                <textarea
-                                    placeholder="Content..."
-                                    value={newBlockContent}
-                                    onChange={(e) => setNewBlockContent(e.target.value)}
-                                    className="creation-textarea"
-                                    rows={4}
-                                />
-                                <button className="create-confirm-btn" onClick={handleSaveNewBlock}>
-                                    Create Block
-                                </button>
                             </div>
-                        )}
+                        </div>
 
-                        {/* Block List (Draggable Source) */}
-                        <Droppable droppableId="library-list" isDropDisabled={true}>
-                            {(provided) => (
-                                <div
-                                    className="blocks-list"
-                                    ref={provided.innerRef}
-                                    {...provided.droppableProps}
-                                >
-                                    {filteredBlocks.map((block, index) => (
-                                        <BlockComponent
-                                            key={block.id}
-                                            index={index}
-                                            block={block}
-                                            draggableId={`library-${block.id}`}
-                                            isEditable={false}
-                                            isDraggable={true}
-                                            hideDelete={true}
-                                            hideAdd={false}
-                                            hideControls={true}
-                                            onUpdate={() => { }} // No-op
-                                            onDelete={() => { }} // No-op
-                                            onAdd={handleAddBlockToCanvas}
-                                        />
-                                    ))}
-                                    {provided.placeholder}
-                                    {filteredBlocks.length === 0 && !isCreatingBlock && (
-                                        <div className="empty-search">
-                                            <p>No blocks found.</p>
-                                        </div>
-                                    )}
+                        <div className="picker-content">
+                            {/* Create New Block Card */}
+                            <div
+                                className={`picker-card create-new ${isCreatingBlock ? 'active' : ''}`}
+                                onClick={handleCreateBlockClick}
+                            >
+                                <Plus size={20} />
+                                <span>New {selectedCategory}</span>
+                            </div>
+
+                            {/* Creation Form (Inline) */}
+                            {isCreatingBlock && (
+                                <div className="block-creation-form">
+                                    <div className="form-header">
+                                        <span>New {selectedCategory}</span>
+                                        <button className="close-btn" onClick={() => setIsCreatingBlock(false)}><X size={14} /></button>
+                                    </div>
+                                    <div className="form-hint">
+                                        {getCategoryTemplate(selectedCategory).hint}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Label (e.g. 'Frontend Expert')"
+                                        value={newBlockLabel}
+                                        onChange={(e) => setNewBlockLabel(e.target.value)}
+                                        autoFocus
+                                        className="creation-input"
+                                    />
+                                    <textarea
+                                        placeholder="Content..."
+                                        value={newBlockContent}
+                                        onChange={(e) => setNewBlockContent(e.target.value)}
+                                        className="creation-textarea"
+                                        rows={4}
+                                    />
+                                    <button className="create-confirm-btn" onClick={handleSaveNewBlock}>
+                                        Create Block
+                                    </button>
                                 </div>
                             )}
-                        </Droppable>
-                    </div>
-                </div>
 
-                {/* PANE 3: PROMPT CANVAS */}
-                <div className="pane-canvas">
-                    <div className="canvas-header">
-                        <h3>Prompt Canvas</h3>
-                        <button
-                            className={`text-btn ${isShowingPreview ? 'active' : ''}`}
-                            onClick={() => setIsShowingPreview(!isShowingPreview)}
-                            title={isShowingPreview ? "Show Blocks" : "Show Live Preview"}
-                        >
-                            <Eye size={14} />
-                        </button>
-                        <button className="text-btn danger" onClick={handleClearCanvas} title="Clear all">
-                            <Trash size={14} />
-                        </button>
-                    </div>
-
-                    <div className="canvas-scroll-area">
-                        {isShowingPreview ? (
-                            <div className="canvas-preview-mode">
-                                <pre className="full-prompt-text">
-                                    {livePreview || "Your prompt is empty. Add blocks to build it!"}
-                                </pre>
-                            </div>
-                        ) : (
-                            <>
-                                {currentBlockIds.length === 0 ? (
-                                    <Droppable droppableId="builder-canvas">
-                                        {(provided) => (
-                                            <div
-                                                className="canvas-empty-state"
-                                                ref={provided.innerRef}
-                                                {...provided.droppableProps}
-                                            >
-                                                <p>Select blocks from the library to build your prompt.</p>
-                                                {provided.placeholder}
+                            {/* Block List (Draggable Source) */}
+                            <Droppable droppableId="library-list" isDropDisabled={true}>
+                                {(provided) => (
+                                    <div
+                                        className="blocks-list"
+                                        ref={provided.innerRef}
+                                        {...provided.droppableProps}
+                                    >
+                                        {filteredBlocks.map((block, index) => (
+                                            <BlockComponent
+                                                key={block.id}
+                                                index={index}
+                                                block={block}
+                                                draggableId={`library-${block.id}`}
+                                                isEditable={false}
+                                                isDraggable={true}
+                                                hideDelete={true}
+                                                hideAdd={false}
+                                                hideControls={true}
+                                                onUpdate={() => { }} // No-op
+                                                onDelete={() => { }} // No-op
+                                                onAdd={handleAddBlockToCanvas}
+                                                categoryColor={getCategoryColor(block.type)}
+                                            />
+                                        ))}
+                                        {provided.placeholder}
+                                        {filteredBlocks.length === 0 && !isCreatingBlock && (
+                                            <div className="empty-search">
+                                                <p>No blocks found.</p>
                                             </div>
                                         )}
-                                    </Droppable>
-                                ) : (
-                                    <Droppable droppableId="builder-canvas">
-                                        {(provided) => (
-                                            <div
-                                                className="canvas-blocks"
-                                                {...provided.droppableProps}
-                                                ref={provided.innerRef}
-                                            >
-                                                {currentBlockIds.map((id, index) => {
-                                                    const block = blocksMap[id];
-                                                    if (!block) return null;
-                                                    return (
-                                                        <BlockComponent
-                                                            key={`${id}-${index}`}
-                                                            draggableId={`canvas-${id}-${index}`}
-                                                            index={index}
-                                                            block={block}
-                                                            isEditable={true}
-                                                            autoExpandTextarea={true}
-                                                            onUpdate={handleUpdateBlockInCanvas}
-                                                            onDelete={handleDeleteBlockFromCanvas}
-                                                            onMove={handleMoveBlockInCanvas}
-                                                        />
-                                                    );
-                                                })}
-                                                {provided.placeholder}
-                                            </div>
-                                        )}
-                                    </Droppable>
+                                    </div>
                                 )}
-                            </>
-                        )}
+                            </Droppable>
+                        </div>
+                    </div>
+
+                    {/* PANE 3: PROMPT CANVAS */}
+                    <div className="pane-canvas">
+                        <div className="canvas-header">
+                            <h3>Prompt Canvas</h3>
+                            <button
+                                className={`text-btn ${isShowingPreview ? 'active' : ''}`}
+                                onClick={() => setIsShowingPreview(!isShowingPreview)}
+                                title={isShowingPreview ? "Show Blocks" : "Show Live Preview"}
+                            >
+                                <Eye size={14} />
+                            </button>
+                            <button className="text-btn danger" onClick={handleClearCanvas} title="Clear all">
+                                <Trash size={14} />
+                            </button>
+                        </div>
+
+                        <div className="canvas-scroll-area">
+                            {isShowingPreview ? (
+                                <div className="canvas-preview-mode">
+                                    <pre className="full-prompt-text">
+                                        {livePreview || "Your prompt is empty. Add blocks to build it!"}
+                                    </pre>
+                                </div>
+                            ) : (
+                                <>
+                                    {currentBlockIds.length === 0 ? (
+                                        <Droppable droppableId="builder-canvas">
+                                            {(provided) => (
+                                                <div
+                                                    className="canvas-empty-state"
+                                                    ref={provided.innerRef}
+                                                    {...provided.droppableProps}
+                                                >
+                                                    <p>Select blocks from the library to build your prompt.</p>
+                                                    {provided.placeholder}
+                                                </div>
+                                            )}
+                                        </Droppable>
+                                    ) : (
+                                        <Droppable droppableId="builder-canvas">
+                                            {(provided) => (
+                                                <div
+                                                    className="canvas-blocks"
+                                                    {...provided.droppableProps}
+                                                    ref={provided.innerRef}
+                                                >
+                                                    {currentBlockIds.map((id, index) => {
+                                                        const block = blocksMap[id];
+                                                        if (!block) return null;
+                                                        return (
+                                                            <BlockComponent
+                                                                key={`${id}-${index}`}
+                                                                draggableId={`canvas-${id}-${index}`}
+                                                                index={index}
+                                                                block={block}
+                                                                isEditable={true}
+                                                                autoExpandTextarea={true}
+                                                                onUpdate={handleUpdateBlockInCanvas}
+                                                                onDelete={handleDeleteBlockFromCanvas}
+                                                                onMove={handleMoveBlockInCanvas}
+                                                                categoryColor={getCategoryColor(block.type)}
+                                                            />
+                                                        );
+                                                    })}
+                                                    {provided.placeholder}
+                                                </div>
+                                            )}
+                                        </Droppable>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+
+                        <div className="canvas-footer">
+                            {isNamingPrompt ? (
+                                <div className="footer-naming-mode">
+                                    <input
+                                        type="text"
+                                        value={promptName}
+                                        onChange={(e) => setPromptName(e.target.value)}
+                                        className="naming-input"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') performPromptSave();
+                                            if (e.key === 'Escape') setIsNamingPrompt(false);
+                                        }}
+                                    />
+                                    <button className="footer-btn secondary" onClick={() => setIsNamingPrompt(false)}>Cancel</button>
+                                    <button className="footer-btn primary" onClick={() => performPromptSave()}>Save</button>
+                                </div>
+                            ) : (
+                                <>
+                                    <button
+                                        className={`footer-btn secondary ${saveStatus === 'saved' ? 'success' : ''}`}
+                                        onClick={handleSavePromptClick}
+                                        disabled={saveStatus === 'saving'}
+                                    >
+                                        {saveStatus === 'idle' && (
+                                            <>
+                                                <Save size={16} />
+                                                {activePromptId ? 'Save Prompt' : 'Save As New'}
+                                            </>
+                                        )}
+                                        {saveStatus === 'saving' && (
+                                            <>
+                                                <Loader2 size={16} className="animate-spin" />
+                                                Saving...
+                                            </>
+                                        )}
+                                        {saveStatus === 'saved' && (
+                                            <>
+                                                <Check size={16} />
+                                                Saved!
+                                            </>
+                                        )}
+                                    </button>
+                                    <button className="footer-btn primary" onClick={handleCopyPreview}>
+                                        <Copy size={16} /> Copy
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
 
 
-                    <div className="canvas-footer">
-                        {isNamingPrompt ? (
-                            <div className="footer-naming-mode">
+                </div>
+            </DragDropContext>
+            {/* CATEGORY CREATION MODAL/TOAST */}
+            {
+                isCreatingCategory && (
+                    <div className="category-creation-overlay">
+                        <div className="category-creation-toast">
+                            <div className="toast-header">
+                                <h3>Create New Category</h3>
+                                <button onClick={() => setIsCreatingCategory(false)}><X size={16} /></button>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Name</label>
                                 <input
                                     type="text"
-                                    value={promptName}
-                                    onChange={(e) => setPromptName(e.target.value)}
-                                    className="naming-input"
+                                    placeholder="e.g. Technical Prompts"
+                                    value={newCategoryName}
+                                    onChange={e => setNewCategoryName(e.target.value)}
                                     autoFocus
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') performPromptSave();
-                                        if (e.key === 'Escape') setIsNamingPrompt(false);
-                                    }}
                                 />
-                                <button className="footer-btn secondary" onClick={() => setIsNamingPrompt(false)}>Cancel</button>
-                                <button className="footer-btn primary" onClick={() => performPromptSave()}>Save</button>
                             </div>
-                        ) : (
-                            <>
-                                <button
-                                    className={`footer-btn secondary ${saveStatus === 'saved' ? 'success' : ''}`}
-                                    onClick={handleSavePromptClick}
-                                    disabled={saveStatus === 'saving'}
-                                >
-                                    {saveStatus === 'idle' && (
-                                        <>
-                                            <Save size={16} />
-                                            {activePromptId ? 'Save Prompt' : 'Save As New'}
-                                        </>
-                                    )}
-                                    {saveStatus === 'saving' && (
-                                        <>
-                                            <Loader2 size={16} className="animate-spin" />
-                                            Saving...
-                                        </>
-                                    )}
-                                    {saveStatus === 'saved' && (
-                                        <>
-                                            <Check size={16} />
-                                            Saved!
-                                        </>
-                                    )}
-                                </button>
-                                <button className="footer-btn primary" onClick={handleCopyPreview}>
-                                    <Copy size={16} /> Copy
-                                </button>
-                            </>
-                        )}
+
+                            <div className="form-group">
+                                <label>Description (Optional)</label>
+                                <textarea
+                                    placeholder="What is this category for?"
+                                    value={newCategoryDesc}
+                                    onChange={e => setNewCategoryDesc(e.target.value)}
+                                    rows={3}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Color</label>
+                                <div className="color-picker-grid">
+                                    {CATEGORY_COLORS.map((color) => {
+                                        const isUsed = customCategories.some(c => c.color === color.value);
+                                        const isSelected = selectedColor === color.value;
+                                        return (
+                                            <button
+                                                key={color.value}
+                                                type="button"
+                                                className={`color-swatch ${isSelected ? 'selected' : ''} ${isUsed ? 'used' : ''}`}
+                                                style={{ backgroundColor: color.value }}
+                                                onClick={() => setSelectedColor(color.value)}
+                                                title={`${color.name}${isUsed ? ' (already used)' : ''}`}
+                                            >
+                                                {isSelected && <Check size={14} color="white" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="toast-actions">
+                                <button className="secondary" onClick={() => handleCreateCategory(true)}>Additional block</button>
+                                <button className="primary" onClick={() => handleCreateCategory(false)}>Create Category</button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {/* EDIT CATEGORY DIALOG */}
+            {isEditingCategory && (
+                <div className="category-creation-overlay">
+                    <div className="category-creation-toast">
+                        <div className="toast-header">
+                            <h3>Edit Category</h3>
+                            <button onClick={() => setIsEditingCategory(false)}><X size={16} /></button>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Name</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Technical Prompts"
+                                value={editCategoryNewName}
+                                onChange={e => setEditCategoryNewName(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Description (Optional)</label>
+                            <textarea
+                                placeholder="What is this category for?"
+                                value={editCategoryDesc}
+                                onChange={e => setEditCategoryDesc(e.target.value)}
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Color</label>
+                            <div className="color-picker-grid">
+                                {CATEGORY_COLORS.map((color) => {
+                                    const isUsed = customCategories.some(c => c.color === color.value && c.name !== editingCategoryName);
+                                    const isSelected = editCategoryColor === color.value;
+                                    return (
+                                        <button
+                                            key={color.value}
+                                            type="button"
+                                            className={`color-swatch ${isSelected ? 'selected' : ''} ${isUsed ? 'used' : ''}`}
+                                            style={{ backgroundColor: color.value }}
+                                            onClick={() => setEditCategoryColor(color.value)}
+                                            title={`${color.name}${isUsed ? ' (already used)' : ''}`}
+                                        >
+                                            {isSelected && <Check size={14} color="white" />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="toast-actions">
+                            <button className="secondary" onClick={() => setIsEditingCategory(false)}>Cancel</button>
+                            <button className="primary" onClick={handleSaveEditCategory}>Save Changes</button>
+                        </div>
                     </div>
                 </div>
-
-
-            </div>
-        </DragDropContext>
+            )}
+        </>
     );
 };
