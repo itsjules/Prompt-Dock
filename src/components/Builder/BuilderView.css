@@ -356,7 +356,8 @@
     font-weight: 700;
     /* Hand-drawn look emphasis */
     font-size: 1.1rem;
-    flex: 1;
+    flex: 0 0 auto;
+    /* Stop growing */
 }
 
 .text-btn {
@@ -795,12 +796,56 @@
 
 /* Category Color Indicator */
 .category-color-dot {
-    width: 8px;
-    height: 8px;
     border-radius: 50%;
-    margin-left: auto;
-    margin-right: 0.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* New Header Layout */
+.canvas-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.canvas-title-group h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.icon-btn-ghost {
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn-ghost:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.last-saved-label {
+    margin-left: 8px;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.canvas-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Category Menu */

@@ -5,11 +5,17 @@ interface BuilderStore {
     // State
     activePromptId: string | null;
     currentBlockIds: string[];
+    draftMetadata: {
+        title: string;
+        description: string;
+        tags: Record<string, string[]>;
+    };
     isDirty: boolean;
 
     // Actions
     setForNew: () => void;
     loadPrompt: (prompt: Prompt) => void;
+    setDraftMetadata: (metadata: Partial<{ title: string; description: string; tags: Record<string, string[]> }>) => void;
 
     addBlockId: (id: string, index?: number) => void;
     removeBlockId: (id: string) => void;
@@ -18,35 +24,45 @@ interface BuilderStore {
     clear: () => void;
 }
 
+const DEFAULT_METADATA = {
+    title: 'New Prompt',
+    description: '',
+    tags: { style: [], topic: [], technique: [] }
+};
+
 export const useBuilderStore = create<BuilderStore>((set, get) => ({
     activePromptId: null,
     currentBlockIds: [],
+    draftMetadata: DEFAULT_METADATA,
     isDirty: false,
 
     setForNew: () => {
         set({
             activePromptId: null,
             currentBlockIds: [],
+            draftMetadata: DEFAULT_METADATA,
             isDirty: false
         });
     },
 
     loadPrompt: (prompt: Prompt) => {
-        // When we load a prompt, we need to ensure all its blocks are available.
-        // In a real app with backend, we might fetch them here.
-        // Since we're local-first and store everything in memory/localstorage, 
-        // the blocks should already be in the BlockStore if the prompt exists.
-
-        // HOWEVER, for the Builder to work, we need to clone the blocks? 
-        // OR do we edit them in place? 
-        // DESIGN DECISION: For now, we edit in place. If the user wants a copy, 
-        // they should "Duplicate" the prompt (future feature).
-
         set({
             activePromptId: prompt.id,
             currentBlockIds: [...prompt.blocks], // Copy array
+            draftMetadata: {
+                title: prompt.title,
+                description: prompt.description || '',
+                tags: prompt.tags || { style: [], topic: [], technique: [] }
+            },
             isDirty: false
         });
+    },
+
+    setDraftMetadata: (metadata) => {
+        set((state) => ({
+            draftMetadata: { ...state.draftMetadata, ...metadata },
+            isDirty: true
+        }));
     },
 
     addBlockId: (id, index) => {
@@ -103,7 +119,9 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
         // For safety, we just detach them.
         set({
             currentBlockIds: [],
-            isDirty: true
+            // Reset metadata for new prompt on clear
+            draftMetadata: DEFAULT_METADATA,
+            isDirty: false // Reset dirty state as we are essentially starting fresh
         });
     }
 }));

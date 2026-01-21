@@ -6,7 +6,22 @@ import { useBuilderStore } from '../../stores/useBuilderStore';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { BlockComponent } from './Block';
 import { BlockType } from '../../schemas/block.schema';
+import { SaveMetadataModal } from './SaveMetadataModal';
 import './BuilderView.css';
+
+// Simple relative time helper
+const getRelativeTime = (isoString: string) => {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'just now';
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    return date.toLocaleDateString();
+};
 
 const BLOCK_TYPES: BlockType[] = ['Role', 'Task', 'Context', 'Output', 'Style', 'Constraints'];
 
@@ -75,12 +90,12 @@ const CATEGORY_COLORS = [
 export const BuilderView = () => {
     const [selectedCategory, setSelectedCategory] = useState<BlockType>('Role');
     const [pickerSearch, setPickerSearch] = useState('');
+
+    // UI State
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
     const [isShowingPreview, setIsShowingPreview] = useState(false);
-
-    // Naming / Creation State
-    const [isNamingPrompt, setIsNamingPrompt] = useState(false);
-    const [promptName, setPromptName] = useState('New Prompt');
+    const [isMetadataModalOpen, setIsMetadataModalOpen] = useState(false);
+    const [metadataMode, setMetadataMode] = useState<'create' | 'edit'>('create');
 
     // New Block Creation State
     const [isCreatingBlock, setIsCreatingBlock] = useState(false);
@@ -102,10 +117,12 @@ export const BuilderView = () => {
     const [editCategoryColor, setEditCategoryColor] = useState('');
 
     // Global Stores
-    const { activePromptId, currentBlockIds, addBlockId, removeBlockId, moveBlock, reorderBlocks, clear: clearBuilder } = useBuilderStore();
+    const { activePromptId, currentBlockIds, addBlockId, removeBlockId, moveBlock, reorderBlocks, clear: clearBuilder, draftMetadata, isDirty } = useBuilderStore();
     const { addBlock, updateBlock, getBlocksByType, addCategory, updateCategory, removeCategory, customCategories } = useBlockStore();
     const blocksMap = useBlockStore(state => state.blocks);
     const { addPrompt, updatePrompt, getPrompt } = usePromptStore();
+
+    const activePrompt = activePromptId ? getPrompt(activePromptId) : null;
 
     // Helper to get category color
     const getCategoryColor = (type: string) => {
@@ -253,7 +270,6 @@ export const BuilderView = () => {
     const handleClearCanvas = () => {
         if (confirm('Are you sure you want to clear all blocks from the canvas?')) {
             clearBuilder();
-            setIsNamingPrompt(false);
         }
     };
 
@@ -292,33 +308,53 @@ export const BuilderView = () => {
 
     // --- Prompt Persisting ---
 
+    const handleOpenSaveModal = () => {
+        setMetadataMode('create');
+        setIsMetadataModalOpen(true);
+    };
+
+    const handleEditMetadata = () => {
+        setMetadataMode('edit');
+        setIsMetadataModalOpen(true);
+    };
+
     const handleSavePromptClick = async () => {
         if (currentBlockIds.length === 0) {
             alert('Cannot save an empty prompt.');
             return;
         }
-        if (saveStatus !== 'idle') return;
 
-        if (activePromptId) {
-            await performPromptSave();
+        if (!activePromptId) {
+            // New prompt -> Open Modal
+            handleOpenSaveModal();
         } else {
-            setPromptName('New Prompt');
-            setIsNamingPrompt(true);
+            // Existing prompt -> Just Save
+            await performPromptSave();
         }
     };
 
-    const performPromptSave = async (nameOverride?: string) => {
+    const performPromptSave = async () => {
         try {
             setSaveStatus('saving');
             await new Promise(resolve => setTimeout(resolve, 600)); // UX delay
 
+            // Get fresh state to avoid stale closure issues
+            const { draftMetadata, currentBlockIds, loadPrompt } = useBuilderStore.getState();
+
             if (activePromptId) {
+                // Update existing
                 updatePrompt(activePromptId, {
                     blocks: currentBlockIds,
+                    title: draftMetadata.title,
+                    description: draftMetadata.description,
+                    tags: draftMetadata.tags as any
                 });
+                // Find prompt to reload proper "last updated" time?
+                // The store updates efficiently, but let's Ensure we update our usage.
                 finalizeSave();
             } else {
-                const title = nameOverride || promptName;
+                // Create new
+                const title = draftMetadata.title;
                 if (!title.trim()) {
                     alert('Please enter a valid name.');
                     setSaveStatus('idle');
@@ -327,15 +363,16 @@ export const BuilderView = () => {
 
                 const newId = addPrompt({
                     title,
+                    description: draftMetadata.description,
                     blocks: currentBlockIds,
-                    tags: { style: [], topic: [], technique: [] }
+                    tags: draftMetadata.tags as any
                 });
 
                 const newPrompt = getPrompt(newId);
                 if (newPrompt) {
-                    useBuilderStore.getState().loadPrompt(newPrompt);
+                    loadPrompt(newPrompt);
                     finalizeSave();
-                    setIsNamingPrompt(false);
+                    setIsMetadataModalOpen(false);
                 } else {
                     console.error('Failed to reload new prompt.');
                     setSaveStatus('idle');
@@ -347,6 +384,30 @@ export const BuilderView = () => {
             alert(`Error saving: ${error.message}`);
         }
     };
+    const { deletePrompt } = usePromptStore();
+
+    const handleDeleteActivePrompt = () => {
+        if (!activePromptId) return;
+
+        if (confirm('Are you sure you want to delete this prompt? This action cannot be undone.')) {
+            // 1. Delete from store
+            deletePrompt(activePromptId);
+
+            // 2. Clear builder state
+            clearBuilder();
+            // Reset metadata defaults manually if needed, but clearBuilder might not touch draftMetadata
+            useBuilderStore.getState().setDraftMetadata({
+                title: 'New Prompt',
+                description: '',
+                tags: { topic: [], technique: [], style: [] }
+            });
+
+            // 3. UI Feedback from Modal
+            setIsMetadataModalOpen(false);
+            setSaveStatus('idle'); // Just in case
+        }
+    };
+
 
     const finalizeSave = () => {
         setSaveStatus('saved');
@@ -514,17 +575,31 @@ export const BuilderView = () => {
                     {/* PANE 3: PROMPT CANVAS */}
                     <div className="pane-canvas">
                         <div className="canvas-header">
-                            <h3>Prompt Canvas</h3>
-                            <button
-                                className={`text-btn ${isShowingPreview ? 'active' : ''}`}
-                                onClick={() => setIsShowingPreview(!isShowingPreview)}
-                                title={isShowingPreview ? "Show Blocks" : "Show Live Preview"}
-                            >
-                                <Eye size={14} />
-                            </button>
-                            <button className="text-btn danger" onClick={handleClearCanvas} title="Clear all">
-                                <Trash size={14} />
-                            </button>
+                            <div className="canvas-title-group">
+                                <h3>{draftMetadata.title || 'Untitled Prompt'}</h3>
+                                {activePromptId && (
+                                    <>
+                                        <button className="icon-btn-ghost" onClick={handleEditMetadata} title="Edit details">
+                                            <Edit2 size={14} />
+                                        </button>
+                                        <span className="last-saved-label">
+                                            {activePrompt?.updatedAt ? `Saved ${getRelativeTime(activePrompt.updatedAt)}` : 'Unsaved'}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                            <div className="canvas-actions">
+                                <button
+                                    className={`text-btn ${isShowingPreview ? 'active' : ''}`}
+                                    onClick={() => setIsShowingPreview(!isShowingPreview)}
+                                    title={isShowingPreview ? "Show Blocks" : "Show Live Preview"}
+                                >
+                                    <Eye size={14} />
+                                </button>
+                                <button className="text-btn danger" onClick={handleClearCanvas} title="Clear all">
+                                    <Trash size={14} />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="canvas-scroll-area">
@@ -586,59 +661,50 @@ export const BuilderView = () => {
 
 
                         <div className="canvas-footer">
-                            {isNamingPrompt ? (
-                                <div className="footer-naming-mode">
-                                    <input
-                                        type="text"
-                                        value={promptName}
-                                        onChange={(e) => setPromptName(e.target.value)}
-                                        className="naming-input"
-                                        autoFocus
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') performPromptSave();
-                                            if (e.key === 'Escape') setIsNamingPrompt(false);
-                                        }}
-                                    />
-                                    <button className="footer-btn secondary" onClick={() => setIsNamingPrompt(false)}>Cancel</button>
-                                    <button className="footer-btn primary" onClick={() => performPromptSave()}>Save</button>
-                                </div>
-                            ) : (
-                                <>
-                                    <button
-                                        className={`footer-btn secondary ${saveStatus === 'saved' ? 'success' : ''}`}
-                                        onClick={handleSavePromptClick}
-                                        disabled={saveStatus === 'saving'}
-                                    >
-                                        {saveStatus === 'idle' && (
-                                            <>
-                                                <Save size={16} />
-                                                {activePromptId ? 'Save Prompt' : 'Save As New'}
-                                            </>
-                                        )}
-                                        {saveStatus === 'saving' && (
-                                            <>
-                                                <Loader2 size={16} className="animate-spin" />
-                                                Saving...
-                                            </>
-                                        )}
-                                        {saveStatus === 'saved' && (
-                                            <>
-                                                <Check size={16} />
-                                                Saved!
-                                            </>
-                                        )}
-                                    </button>
-                                    <button className="footer-btn primary" onClick={handleCopyPreview}>
-                                        <Copy size={16} /> Copy
-                                    </button>
-                                </>
-                            )}
+                            <button
+                                className={`footer-btn secondary ${saveStatus === 'saved' ? 'success' : ''}`}
+                                onClick={handleSavePromptClick}
+                                disabled={saveStatus === 'saving' || (!isDirty && !!activePromptId)}
+                                title={!isDirty && !!activePromptId ? "No changes to save" : "Save Prompt"}
+                            >
+                                {saveStatus === 'idle' && (
+                                    <>
+                                        <Save size={16} />
+                                        {activePromptId ? (isDirty ? 'Save Changes' : 'Saved') : 'Save Prompt'}
+                                    </>
+                                )}
+                                {saveStatus === 'saving' && (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        Saving...
+                                    </>
+                                )}
+                                {saveStatus === 'saved' && (
+                                    <>
+                                        <Check size={16} />
+                                        Saved!
+                                    </>
+                                )}
+                            </button>
+                            <button className="footer-btn primary" onClick={handleCopyPreview}>
+                                <Copy size={16} /> Copy
+                            </button>
                         </div>
                     </div>
 
 
-                </div>
-            </DragDropContext>
+                </div >
+            </DragDropContext >
+
+            <SaveMetadataModal
+                isOpen={isMetadataModalOpen}
+                onClose={() => setIsMetadataModalOpen(false)}
+                onSave={performPromptSave}
+                isSaving={saveStatus === 'saving'}
+                initialData={draftMetadata}
+                mode={metadataMode}
+                onDelete={activePromptId ? handleDeleteActivePrompt : undefined}
+            />
             {/* CATEGORY CREATION MODAL/TOAST */}
             {
                 isCreatingCategory && (
@@ -701,64 +767,66 @@ export const BuilderView = () => {
                 )
             }
             {/* EDIT CATEGORY DIALOG */}
-            {isEditingCategory && (
-                <div className="category-creation-overlay">
-                    <div className="category-creation-toast">
-                        <div className="toast-header">
-                            <h3>Edit Category</h3>
-                            <button onClick={() => setIsEditingCategory(false)}><X size={16} /></button>
-                        </div>
+            {
+                isEditingCategory && (
+                    <div className="category-creation-overlay">
+                        <div className="category-creation-toast">
+                            <div className="toast-header">
+                                <h3>Edit Category</h3>
+                                <button onClick={() => setIsEditingCategory(false)}><X size={16} /></button>
+                            </div>
 
-                        <div className="form-group">
-                            <label>Name</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. Technical Prompts"
-                                value={editCategoryNewName}
-                                onChange={e => setEditCategoryNewName(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
+                            <div className="form-group">
+                                <label>Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Technical Prompts"
+                                    value={editCategoryNewName}
+                                    onChange={e => setEditCategoryNewName(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
 
-                        <div className="form-group">
-                            <label>Description (Optional)</label>
-                            <textarea
-                                placeholder="What is this category for?"
-                                value={editCategoryDesc}
-                                onChange={e => setEditCategoryDesc(e.target.value)}
-                                rows={3}
-                            />
-                        </div>
+                            <div className="form-group">
+                                <label>Description (Optional)</label>
+                                <textarea
+                                    placeholder="What is this category for?"
+                                    value={editCategoryDesc}
+                                    onChange={e => setEditCategoryDesc(e.target.value)}
+                                    rows={3}
+                                />
+                            </div>
 
-                        <div className="form-group">
-                            <label>Color</label>
-                            <div className="color-picker-grid">
-                                {CATEGORY_COLORS.map((color) => {
-                                    const isUsed = customCategories.some(c => c.color === color.value && c.name !== editingCategoryName);
-                                    const isSelected = editCategoryColor === color.value;
-                                    return (
-                                        <button
-                                            key={color.value}
-                                            type="button"
-                                            className={`color-swatch ${isSelected ? 'selected' : ''} ${isUsed ? 'used' : ''}`}
-                                            style={{ backgroundColor: color.value }}
-                                            onClick={() => setEditCategoryColor(color.value)}
-                                            title={`${color.name}${isUsed ? ' (already used)' : ''}`}
-                                        >
-                                            {isSelected && <Check size={14} color="white" />}
-                                        </button>
-                                    );
-                                })}
+                            <div className="form-group">
+                                <label>Color</label>
+                                <div className="color-picker-grid">
+                                    {CATEGORY_COLORS.map((color) => {
+                                        const isUsed = customCategories.some(c => c.color === color.value && c.name !== editingCategoryName);
+                                        const isSelected = editCategoryColor === color.value;
+                                        return (
+                                            <button
+                                                key={color.value}
+                                                type="button"
+                                                className={`color-swatch ${isSelected ? 'selected' : ''} ${isUsed ? 'used' : ''}`}
+                                                style={{ backgroundColor: color.value }}
+                                                onClick={() => setEditCategoryColor(color.value)}
+                                                title={`${color.name}${isUsed ? ' (already used)' : ''}`}
+                                            >
+                                                {isSelected && <Check size={14} color="white" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="toast-actions">
+                                <button className="secondary" onClick={() => setIsEditingCategory(false)}>Cancel</button>
+                                <button className="primary" onClick={handleSaveEditCategory}>Save Changes</button>
                             </div>
                         </div>
-
-                        <div className="toast-actions">
-                            <button className="secondary" onClick={() => setIsEditingCategory(false)}>Cancel</button>
-                            <button className="primary" onClick={handleSaveEditCategory}>Save Changes</button>
-                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </>
     );
 };
