@@ -4,10 +4,11 @@ import type { Block, BlockType } from '../schemas/block.schema';
 
 interface BlockStore {
     blocks: Record<string, Block>;
-    addBlock: (block: Omit<Block, 'id' | 'createdAt' | 'updatedAt'>) => string;
+    addBlock: (block: Omit<Block, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>) => string;
     updateBlock: (id: string, updates: Partial<Omit<Block, 'id'>>) => void;
     deleteBlock: (id: string) => void;
     toggleFavorite: (id: string) => void;
+    incrementUsage: (id: string) => void;
     getBlock: (id: string) => Block | undefined;
     getAllBlocks: () => Block[];
     getBlocksByType: (type: BlockType) => Block[];
@@ -24,6 +25,7 @@ export const useBlockStore = create<BlockStore>((set, get) => ({
     blocks: {},
     customCategories: [],
 
+
     addBlock: (block) => {
         const id = uuidv4();
         const now = new Date().toISOString();
@@ -32,6 +34,7 @@ export const useBlockStore = create<BlockStore>((set, get) => ({
             id,
             createdAt: now,
             updatedAt: now,
+            usageCount: 0,
         };
         set((state) => ({
             blocks: { ...state.blocks, [id]: newBlock },
@@ -72,6 +75,19 @@ export const useBlockStore = create<BlockStore>((set, get) => ({
                 blocks: {
                     ...state.blocks,
                     [id]: { ...block, isFavorite: !block.isFavorite, updatedAt: new Date().toISOString() }
+                }
+            };
+        });
+    },
+
+    incrementUsage: (id) => {
+        set((state) => {
+            const block = state.blocks[id];
+            if (!block) return state;
+            return {
+                blocks: {
+                    ...state.blocks,
+                    [id]: { ...block, usageCount: (block.usageCount || 0) + 1, updatedAt: new Date().toISOString() }
                 }
             };
         });

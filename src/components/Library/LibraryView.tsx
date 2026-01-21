@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Fuse from 'fuse.js';
-import { Star, Clock, Grid, Tag, FolderPlus, Plus, Copy, Trash2, Filter, X, CheckSquare, ChevronDown } from 'lucide-react';
+import { Star, Clock, Grid, Tag, FolderPlus, Plus, Copy, Trash2, Filter, X, CheckSquare, ChevronDown, Repeat, ArrowUpDown } from 'lucide-react';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBlockStore } from '../../stores/useBlockStore';
@@ -18,7 +18,7 @@ import './LibraryView.css';
 export const LibraryView = () => {
     const { getAllPrompts, getFavorites: getFavPrompts, getRecents, deletePrompt } = usePromptStore();
     const { getAllCollections } = useCollectionStore();
-    const { getAllBlocks, getFavoriteBlocks: getFavBlocks, deleteBlock } = useBlockStore();
+    const { getAllBlocks, getFavoriteBlocks: getFavBlocks, deleteBlock, toggleFavorite: toggleBlockFavorite } = useBlockStore();
 
     const { searchQuery, setActiveView, libraryTab, setLibraryTab, activeCollectionId, setActiveCollectionId } = useUIStore();
     const { loadPrompt, addBlockId } = useBuilderStore();
@@ -102,6 +102,10 @@ export const LibraryView = () => {
     // Default to showing both
     const [filterItemTypes, setFilterItemTypes] = useState<Set<'prompt' | 'block'>>(new Set(['prompt', 'block']));
 
+    // Sort State
+    const [sortBy, setSortBy] = useState<'relevance' | 'newest' | 'usage'>('relevance');
+    const [isSortOpen, setIsSortOpen] = useState(false);
+
     // Filter Options
     const blockTypes: BlockType[] = ['Role', 'Task', 'Context', 'Output', 'Style', 'Constraints'];
 
@@ -162,11 +166,10 @@ export const LibraryView = () => {
             });
         }
 
-        // 4. Role-Based Re-ranking (The "Reordering" requirement)
-        // We calculate a score for each item based on the active role's keywords vs item metadata
-
-        if (activeRoleId) {
-            results = [...results].sort((a, b) => { // Stable sort copy
+        // 4. Sorting
+        if (sortBy === 'relevance' && activeRoleId) {
+            // Existing Role-Based Relevance + Recency Fallback
+            results = [...results].sort((a, b) => {
                 // Calculate score for A
                 const tagsA = a.type === 'prompt' && a.tags
                     ? [...(a.tags.style || []), ...(a.tags.topic || []), ...(a.tags.technique || [])]
@@ -184,7 +187,30 @@ export const LibraryView = () => {
                 if (scoreA !== scoreB) {
                     return scoreB - scoreA; // Descending order of relevance
                 }
-                // Tie-breaker: Recency (Updated At)
+                // Tie-breaker: Recency
+                const dateA = new Date(a.original.updatedAt || 0).getTime();
+                const dateB = new Date(b.original.updatedAt || 0).getTime();
+                return dateB - dateA;
+            });
+        } else if (sortBy === 'newest') {
+            results = [...results].sort((a, b) => {
+                const dateA = new Date(a.original.updatedAt || 0).getTime();
+                const dateB = new Date(b.original.updatedAt || 0).getTime();
+                return dateB - dateA;
+            });
+        } else if (sortBy === 'usage') {
+            results = [...results].sort((a, b) => {
+                const countA = (a.original as any).usageCount || 0;
+                const countB = (b.original as any).usageCount || 0;
+                if (countA !== countB) return countB - countA;
+                // Tie-breaker: Newest
+                const dateA = new Date(a.original.updatedAt || 0).getTime();
+                const dateB = new Date(b.original.updatedAt || 0).getTime();
+                return dateB - dateA;
+            });
+        } else {
+            // Default Fallback (if no role or relevance selected but fallback needed, usually Newest)
+            results = [...results].sort((a, b) => {
                 const dateA = new Date(a.original.updatedAt || 0).getTime();
                 const dateB = new Date(b.original.updatedAt || 0).getTime();
                 return dateB - dateA;
@@ -192,7 +218,7 @@ export const LibraryView = () => {
         }
 
         return results;
-    }, [fuse, searchQuery, searchItems, selectedTags, selectedBlockTypes, filterItemTypes, activeRoleId, getRelevanceScore]);
+    }, [fuse, searchQuery, searchItems, selectedTags, selectedBlockTypes, filterItemTypes, activeRoleId, getRelevanceScore, sortBy]);
 
     const availableFiltersCount = selectedTags.size + selectedBlockTypes.size + (filterItemTypes.size < 2 ? 1 : 0);
 
@@ -309,7 +335,41 @@ export const LibraryView = () => {
                     Collections
                 </button>
 
-                <div style={{ flex: 1 }} /> {/* Spacer to push filter to right */}
+                <div style={{ flex: 1 }} /> {/* Spacer */}
+
+                {/* Sorting Dropdown */}
+                <div className="filter-popover-wrapper" style={{ position: 'relative', marginRight: '0.5rem' }}>
+                    <button
+                        className={`filter-toggle-btn ${sortBy !== 'relevance' ? 'active' : ''}`}
+                        onClick={() => setIsSortOpen(!isSortOpen)}
+                        title="Sort Order"
+                    >
+                        <ArrowUpDown size={14} />
+                        <span style={{ textTransform: 'capitalize' }}>{sortBy}</span>
+                        <ChevronDown size={14} style={{ opacity: 0.5 }} />
+                    </button>
+                    {isSortOpen && (
+                        <>
+                            <div className="filter-popover-backdrop" onClick={() => setIsSortOpen(false)} />
+                            <div className="filter-popover" style={{ width: '150px', right: 0 }}>
+                                <div className="filter-section">
+                                    <button className={`sort-option ${sortBy === 'relevance' ? 'selected' : ''}`} onClick={() => { setSortBy('relevance'); setIsSortOpen(false); }}>
+                                        Relevance
+                                        {sortBy === 'relevance' && <CheckSquare size={12} />}
+                                    </button>
+                                    <button className={`sort-option ${sortBy === 'newest' ? 'selected' : ''}`} onClick={() => { setSortBy('newest'); setIsSortOpen(false); }}>
+                                        Newest
+                                        {sortBy === 'newest' && <CheckSquare size={12} />}
+                                    </button>
+                                    <button className={`sort-option ${sortBy === 'usage' ? 'selected' : ''}`} onClick={() => { setSortBy('usage'); setIsSortOpen(false); }}>
+                                        Most Used
+                                        {sortBy === 'usage' && <CheckSquare size={12} />}
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
 
                 <div className="filter-popover-wrapper" style={{ position: 'relative' }}>
                     <button
@@ -474,7 +534,22 @@ export const LibraryView = () => {
                                 const block = item.original as any;
                                 return (
                                     <div key={item.id} className="library-block-wrapper" onClick={() => handleUseBlock(block.id)}>
-                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                                            {/* Block Header (Favorites) */}
+                                            <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }} title="Usage Count">
+                                                    <Repeat size={12} />
+                                                    <span>{block.usageCount || 0}</span>
+                                                </div>
+                                                <button
+                                                    className={`favorite-btn-mini ${block.isFavorite ? 'active' : ''}`}
+                                                    onClick={(e) => { e.stopPropagation(); toggleBlockFavorite(block.id); }}
+                                                    title={block.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                                                >
+                                                    <Star size={14} fill={block.isFavorite ? "currentColor" : "none"} />
+                                                </button>
+                                            </div>
+
                                             <BlockComponent
                                                 block={block}
                                                 // @ts-ignore
@@ -489,6 +564,8 @@ export const LibraryView = () => {
                                         </div>
                                         {/* Prompt-like Actions Footer */}
                                         <div className="block-card-footer">
+                                            <div style={{ flex: 1 }} />
+
                                             <button
                                                 className="action-btn"
                                                 onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(block.content); }}

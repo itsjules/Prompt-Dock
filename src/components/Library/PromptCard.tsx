@@ -1,4 +1,4 @@
-import { Play, Copy, Star, FolderPlus, Trash2 } from 'lucide-react';
+import { Play, Copy, Star, FolderPlus, Trash2, Repeat } from 'lucide-react';
 import type { Prompt } from '../../schemas/prompt.schema';
 import { usePromptStore } from '../../stores/usePromptStore';
 import './PromptCard.css';
@@ -28,13 +28,19 @@ export const PromptCard = ({ prompt, onUse, onAddToCollection, onDelete }: Promp
         <div className="prompt-card" onClick={() => onUse(prompt)}>
             <div className="prompt-card-header">
                 <h3 className="prompt-title">{prompt.title}</h3>
-                <button
-                    className={`favorite-btn ${prompt.isFavorite ? 'active' : ''}`}
-                    onClick={handleToggleFavorite}
-                    title={prompt.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                >
-                    <Star size={16} fill={prompt.isFavorite ? 'currentColor' : 'none'} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }} title="Usage Count">
+                        <Repeat size={12} />
+                        <span>{prompt.usageCount || 0}</span>
+                    </div>
+                    <button
+                        className={`favorite-btn ${prompt.isFavorite ? 'active' : ''}`}
+                        onClick={handleToggleFavorite}
+                        title={prompt.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                        <Star size={16} fill={prompt.isFavorite ? 'currentColor' : 'none'} />
+                    </button>
+                </div>
             </div>
             <p className="prompt-description">{prompt.description}</p>
             <div className="prompt-tags">
@@ -46,6 +52,7 @@ export const PromptCard = ({ prompt, onUse, onAddToCollection, onDelete }: Promp
                     <span key={tag} className="tag">{tag}</span>
                 ))}
             </div>
+
             <div className="prompt-actions">
                 <button className="action-btn" onClick={handleCopy} title="Copy to Clipboard">
                     <Copy size={16} />

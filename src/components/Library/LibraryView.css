@@ -358,6 +358,7 @@
     /* Ensure height allows relative positioning of children */
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .library-block-wrapper:hover {
@@ -414,3 +415,57 @@
     pointer-events: auto;
     /* Re-enable clicks on hover */
 }
+.favorite-btn-mini {
+    background: transparent;
+    border: none;
+    color: white; /* Header is usually colored, so white star looks good */
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    opacity: 0.8;
+}
+
+.favorite-btn-mini:hover {
+    background: rgba(255, 255, 255, 0.2);
+    /* Light hover over colored header */
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.favorite-btn-mini.active {
+    color: #ffb400;
+    opacity: 1;
+}
+
+/* Sorting Option Styles */
+.sort-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.sort-option:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.sort-option.selected {
+    color: var(--accent-primary);
+    background: rgba(124, 58, 237, 0.1);
+    font-weight: 500;
+}
+

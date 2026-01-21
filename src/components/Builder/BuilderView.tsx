@@ -157,9 +157,9 @@ export const BuilderView = () => {
         setLocalBlockEdit,
         removeLocalBlockEdit
     } = useBuilderStore();
-    const { addBlock, updateBlock, getBlocksByType, addCategory, updateCategory, removeCategory, customCategories } = useBlockStore();
+    const { addBlock, updateBlock, getBlocksByType, addCategory, updateCategory, removeCategory, customCategories, incrementUsage: incrementBlockUsage } = useBlockStore();
     const blocksMap = useBlockStore(state => state.blocks);
-    const { addPrompt, updatePrompt, getPrompt } = usePromptStore();
+    const { addPrompt, updatePrompt, getPrompt, incrementUsage: incrementPromptUsage } = usePromptStore();
 
     const activePrompt = activePromptId ? getPrompt(activePromptId) : null;
 
@@ -409,6 +409,17 @@ export const BuilderView = () => {
         navigator.clipboard.writeText(livePreview);
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
+
+        // Track Usage
+        if (activePromptId) {
+            incrementPromptUsage(activePromptId);
+        }
+        // Track usage for all blocks used in this composition
+        currentBlockIds.forEach(id => {
+            // We only track usage for blocks that are actually in the library (not just local drafts, though they might be same ID)
+            // The store handles invalid IDs gracefully.
+            incrementBlockUsage(id);
+        });
     };
 
     // --- Prompt Persisting ---
