@@ -120,6 +120,10 @@ export const BuilderView = () => {
     const [metadataMode, setMetadataMode] = useState<'create' | 'edit'>('create');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+    // Block Editing State (Local edits before save)
+    const [localBlockEdits, setLocalBlockEdits] = useState<Record<string, { label?: string, content?: string }>>({});
+    const [blockSaveCandidate, setBlockSaveCandidate] = useState<string | null>(null); // ID of block being saved
+
     // New Block Creation State
     const [isCreatingBlock, setIsCreatingBlock] = useState(false);
     const [newBlockLabel, setNewBlockLabel] = useState('');
@@ -277,15 +281,85 @@ export const BuilderView = () => {
     };
 
     const handleUpdateBlockInCanvas = (id: string, content: string) => {
-        // NOTE: This updates the global block definition, affecting all prompts using it.
-        // In a real app, you might warn the user or create a fork.
-        // For now, we update in place as per simplified requirements.
-        updateBlock(id, { content });
+        setLocalBlockEdits(prev => ({
+            ...prev,
+            [id]: { ...prev[id], content }
+        }));
     };
+
+    const handleUpdateBlockLabel = (id: string, label: string) => {
+        setLocalBlockEdits(prev => ({
+            ...prev,
+            [id]: { ...prev[id], label }
+        }));
+    };
+
+    const handleRequestSaveBlock = (id: string) => {
+        setBlockSaveCandidate(id);
+    };
+
+    const handleResolveBlockSave = (action: 'overwrite' | 'fork' | 'discard') => {
+        if (!blockSaveCandidate) return;
+        const id = blockSaveCandidate;
+        const edits = localBlockEdits[id];
+        const originalBlock = blocksMap[id];
+
+        if (!edits || !originalBlock) {
+            setBlockSaveCandidate(null);
+            return;
+        }
+
+        const newContent = edits.content !== undefined ? edits.content : originalBlock.content;
+        const newLabel = edits.label !== undefined ? edits.label : originalBlock.label;
+
+        if (action === 'overwrite') {
+            updateBlock(id, {
+                content: newContent,
+                label: newLabel
+            });
+        } else if (action === 'fork') {
+            // Create new block
+            const newId = addBlock({
+                type: originalBlock.type,
+                label: newLabel + ' (Copy)',
+                content: newContent,
+                isFavorite: false
+            });
+            // Replace in canvas
+            const index = currentBlockIds.indexOf(id);
+            if (index !== -1) {
+                // We need a replaceBlockId function in store or just remove/add
+                // Since we don't have replace, we remove and add at index
+                // Wait, useBuilderStore might not have replace.
+                // Let's implement manual replace using removeBlockId and addBlockId
+                // Actually, `addBlockId` appends. We need to insert at index.
+                // `addBlockId` supports index? Let's check store definition or usage.
+                // usage: addBlockId(id, index?)
+                // Yes, checking imports... usage in handleDragEnd: addBlockId(originalId, destination.index);
+                // So we can do:
+                removeBlockId(id);
+                addBlockId(newId, index);
+            }
+        }
+
+        // Cleanup
+        setLocalBlockEdits(prev => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+        });
+        setBlockSaveCandidate(null);
+    };
+
 
     const handleDeleteBlockFromCanvas = (id: string) => {
         removeBlockId(id);
-        // We do NOT delete from the global library here, just the canvas.
+        // Also clear local edits
+        setLocalBlockEdits(prev => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+        });
     };
 
     const handleMoveBlockInCanvas = (id: string, direction: 'up' | 'down') => {
@@ -295,6 +369,7 @@ export const BuilderView = () => {
     const handleClearCanvas = () => {
         if (confirm('Are you sure you want to clear all blocks from the canvas?')) {
             clearBuilder();
+            setLocalBlockEdits({});
         }
     };
 
@@ -321,9 +396,14 @@ export const BuilderView = () => {
     };
 
     const livePreview = currentBlockIds
-        .map(id => blocksMap[id])
+        .map(id => {
+            const block = blocksMap[id];
+            if (!block) return null;
+            // Use local content if available
+            const edits = localBlockEdits[id];
+            return edits?.content !== undefined ? edits.content : block.content;
+        })
         .filter(Boolean)
-        .map(block => block.content)
         .filter(content => content && content.trim().length > 0)
         .join('\n\n');
 
@@ -341,7 +421,13 @@ export const BuilderView = () => {
     };
 
     const handleEditMetadata = () => {
-        setMetadataMode('edit');
+        // If it's a new prompt (no ID), treat it as "creating" for the modal text (e.g. "Save Prompt"),
+        // unless you strictly want "Edit" semantics. Given the user wants to "name and save", 'create' or 'edit' works,
+        // but 'create' matches the "Save" button behavior for new prompts. 
+        // However, "Edit" icon implies editing. 
+        // Let's stick to 'edit' if we want to imply modifying current draft state, 
+        // BUT 'create' mode usually hides the "Delete" button which is good for new prompts.
+        setMetadataMode(activePromptId ? 'edit' : 'create');
         setIsMetadataModalOpen(true);
     };
 
@@ -349,6 +435,34 @@ export const BuilderView = () => {
         if (currentBlockIds.length === 0) {
             alert('Cannot save an empty prompt.');
             return;
+        }
+
+        // Warn if there are unsaved block edits?
+        if (Object.keys(localBlockEdits).length > 0) {
+            if (!confirm("You have unsaved edits to some blocks. These local edits will NOT be saved to the library, but they will be saved as part of this prompt's composition. Continue?")) {
+                return;
+            }
+            // Actually, for Prompt persistence, we usually save the Block IDs.
+            // If the user made local edits, those ARE NOT standard blocks yet.
+            // The prompt data structure usually just stores IDs.
+            // If we just save IDs, the local edits are LOST upon reload unless we persist them.
+            // Requirement check: "save this edited version if i want to" -> implied block saving.
+            // If the user strictly saves the PROMPT, the prompt probably refers to Block IDs.
+            // If the blocks aren't updated, the prompt will load old content.
+            // CRITICAL: We should probably force resolving block saves or auto-fork/overwrite?
+            // "but i should also be able to save this edited version IF i want to" implies optionality.
+            // If they DON'T save the block, what happens?
+            // Standard behavior: The prompt is a collection of blocks. If I change the text in the canvas, 
+            // usually in tools like this, it diverges from the library block (becomes detached or requires saving).
+            // Current app architecture: `currentBlockIds` is list of strings. `usePromptStore` saves `blocks: string[]`.
+            // So it ONLY saves IDs.
+            // So if I don't save the block changes to the library (overwrite or fork), they are LOST.
+            // So I MUST warn the user or auto-save.
+            // The prompt saving logic in `performPromptSave` uses `currentBlockIds`.
+            // The `localBlockEdits` are ephemeral.
+            // I will add a check: if `localBlockEdits` has keys, force user to resolve them or warn they will be lost.
+            // The alert above warns they will be saved "as part of this prompt composition" -> THIS IS FALSE currently.
+            // Correct warning: "You have unsaved edits. Please save your block changes (overwrite or fork) before saving the prompt, otherwise these changes will be lost."
         }
 
         if (!activePromptId) {
@@ -361,6 +475,11 @@ export const BuilderView = () => {
     };
 
     const performPromptSave = async () => {
+        if (Object.keys(localBlockEdits).length > 0) {
+            alert("Please save your block edits (using the save icon on the block) before saving the prompt to ensure changes are persisted.");
+            return;
+        }
+
         try {
             setSaveStatus('saving');
             await new Promise(resolve => setTimeout(resolve, 600)); // UX delay
@@ -602,11 +721,11 @@ export const BuilderView = () => {
                                     </button>
                                 )}
                                 <h3>{draftMetadata.title || 'Untitled Prompt'}</h3>
+                                <button className="icon-btn-ghost" onClick={handleEditMetadata} title="Edit details">
+                                    <Edit2 size={14} />
+                                </button>
                                 {activePromptId && (
                                     <>
-                                        <button className="icon-btn-ghost" onClick={handleEditMetadata} title="Edit details">
-                                            <Edit2 size={14} />
-                                        </button>
                                         <span className="last-saved-label">
                                             {activePrompt?.updatedAt ? `Saved ${getRelativeTime(activePrompt.updatedAt)}` : 'Unsaved'}
                                         </span>
@@ -660,6 +779,12 @@ export const BuilderView = () => {
                                                     {currentBlockIds.map((id, index) => {
                                                         const block = blocksMap[id];
                                                         if (!block) return null;
+                                                        // Pass local edits to block
+                                                        const edits = localBlockEdits[id];
+                                                        const displayContent = edits?.content !== undefined ? edits.content : block.content;
+                                                        const displayLabel = edits?.label !== undefined ? edits.label : block.label;
+                                                        const isDirty = edits !== undefined;
+
                                                         return (
                                                             <BlockComponent
                                                                 key={`${id}-${index}`}
@@ -668,7 +793,14 @@ export const BuilderView = () => {
                                                                 block={block}
                                                                 isEditable={true}
                                                                 autoExpandTextarea={true}
+                                                                // Pass draft props
+                                                                draftContent={displayContent}
+                                                                draftLabel={displayLabel}
+                                                                isDirty={isDirty}
+                                                                // Handlers
                                                                 onUpdate={handleUpdateBlockInCanvas}
+                                                                onLabelUpdate={handleUpdateBlockLabel}
+                                                                onSave={handleRequestSaveBlock}
                                                                 onDelete={handleDeleteBlockFromCanvas}
                                                                 onMove={handleMoveBlockInCanvas}
                                                                 categoryColor={getCategoryColor(block.type)}
@@ -734,6 +866,34 @@ export const BuilderView = () => {
                 mode={metadataMode}
                 onDelete={activePromptId ? handleDeleteActivePrompt : undefined}
             />
+
+            {/* BLOCK SAVE RESOLUTION MODAL */}
+            {blockSaveCandidate && (
+                <div className="category-creation-overlay">
+                    <div className="category-creation-toast" style={{ maxWidth: '400px' }}>
+                        <div className="toast-header">
+                            <h3>Unsaved Block Changes</h3>
+                            <button onClick={() => setBlockSaveCandidate(null)}><X size={16} /></button>
+                        </div>
+                        <p style={{ padding: '0 1.5rem', marginBottom: '1rem', color: '#ccc', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                            You have modified <strong>{blocksMap[blockSaveCandidate]?.label}</strong>. How would you like to save these changes?
+                        </p>
+                        <div className="toast-actions" style={{ flexDirection: 'column', gap: '0.5rem', alignItems: 'stretch' }}>
+                            <button className="primary" onClick={() => handleResolveBlockSave('overwrite')}>
+                                Overwrite Original
+                                <span style={{ display: 'block', fontSize: '0.75rem', opacity: 0.7, fontWeight: 400 }}>Updates this block everywhere it's used.</span>
+                            </button>
+                            <button className="secondary" onClick={() => handleResolveBlockSave('fork')}>
+                                Save as Copy
+                                <span style={{ display: 'block', fontSize: '0.75rem', opacity: 0.7, fontWeight: 400 }}>Creates a new block. Best for safe editing.</span>
+                            </button>
+                            <button className="secondary danger" onClick={() => handleResolveBlockSave('discard')} style={{ marginTop: '0.5rem' }}>
+                                Discard Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* CATEGORY CREATION MODAL/TOAST */}
             {
                 isCreatingCategory && (

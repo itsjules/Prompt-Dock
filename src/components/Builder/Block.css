@@ -59,7 +59,8 @@
 }
 
 .block-delete-btn,
-.block-add-btn {
+.block-add-btn,
+.block-save-btn {
     background: none;
     border: none;
     cursor: pointer;
@@ -72,7 +73,8 @@
 }
 
 .block-delete-btn:hover,
-.block-add-btn:hover {
+.block-add-btn:hover,
+.block-save-btn:hover {
     background-color: rgba(255, 255, 255, 0.05);
     opacity: 1;
 }
@@ -158,4 +160,48 @@
     line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.block-label-input {
+    font-weight: 600;
+    font-size: 0.85rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    outline: none;
+    padding: 2px 4px;
+    /* Slight padding for input feel */
+    margin: -2px -4px;
+    /* Compensate for padding to alignment */
+    width: 100%;
+    cursor: text;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.block-label-input:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.block-label-input:focus {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }

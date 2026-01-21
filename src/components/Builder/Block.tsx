@@ -1,4 +1,4 @@
-import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from 'lucide-react';
+import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, Save } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useEffect, useRef } from 'react';
 import type { Block, BlockType } from '../../schemas/block.schema';
@@ -9,6 +9,8 @@ interface BlockProps {
     index: number;
     // Actions
     onUpdate?: (id: string, content: string) => void;
+    onLabelUpdate?: (id: string, label: string) => void; // New prop for label editing
+    onSave?: (id: string) => void; // New prop for saving changes
     onDelete?: (id: string) => void;
     onMove?: (id: string, direction: 'up' | 'down') => void;
     onAdd?: (id: string) => void; // New prop for adding block to canvas
@@ -23,6 +25,10 @@ interface BlockProps {
     hideControls?: boolean;
     autoExpandTextarea?: boolean; // New prop for canvas blocks
     categoryColor?: string; // Custom category color
+    // Draft / Edit Mode Props
+    draftContent?: string;
+    draftLabel?: string;
+    isDirty?: boolean;
 }
 
 const BLOCK_COLORS: Record<BlockType, string> = {
@@ -73,6 +79,8 @@ export const BlockComponent = ({
     block,
     index,
     onUpdate,
+    onLabelUpdate,
+    onSave,
     onDelete,
     onMove,
     onAdd,
@@ -85,7 +93,10 @@ export const BlockComponent = ({
     hideAdd = true,
     hideControls = false,
     autoExpandTextarea = false,
-    categoryColor
+    categoryColor,
+    draftContent,
+    draftLabel,
+    isDirty
 }: BlockProps) => {
 
     const effectiveDraggableId = draggableId || block.id;
@@ -97,14 +108,18 @@ export const BlockComponent = ({
             const textarea = textareaRef.current;
             // Reset height to auto to get the correct scrollHeight
             textarea.style.height = 'auto';
-            // Set height to scrollHeight to fit all content
+            // Set height to scrollHeight to fit all content (use draftContent if available)
+            // Actually, value is controlled, so just triggering on value change is enough.
             textarea.style.height = `${textarea.scrollHeight}px`;
         }
-    }, [block.content, autoExpandTextarea]);
+    }, [block.content, draftContent, autoExpandTextarea]);
 
     // Determine colors: use custom category color if provided, otherwise use default
     const blockColor = categoryColor ? darkenColor(categoryColor) : BLOCK_COLORS[block.type as BlockType] || '#2c2e33';
     const accentColor = categoryColor ? lightenColor(categoryColor) : BLOCK_ACCENTS[block.type as BlockType] || '#9065B0';
+
+    const displayContent = draftContent !== undefined ? draftContent : block.content;
+    const displayLabel = draftLabel !== undefined ? draftLabel : block.label;
 
     const renderContent = (dragProps: any = {}, dragHandleProps: any = {}, isDragging: boolean = false, innerRef: any = null) => (
         <div
@@ -127,11 +142,33 @@ export const BlockComponent = ({
                     <span className="block-type" style={{ color: accentColor, fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
                         {block.type.toUpperCase()}
                     </span>
-                    <span className="block-label" style={{ color: accentColor, fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {block.label || 'Untitled Block'}
-                    </span>
+                    {isEditable && onLabelUpdate ? (
+                        <input
+                            type="text"
+                            value={displayLabel}
+                            onChange={(e) => onLabelUpdate(block.id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="block-label-input"
+                            style={{ color: accentColor }}
+                            spellCheck={false}
+                        />
+                    ) : (
+                        <span className="block-label" style={{ color: accentColor, fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {displayLabel || 'Untitled Block'}
+                        </span>
+                    )}
                 </div>
                 <div className="block-actions" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {isDirty && onSave && (
+                        <button
+                            className="block-save-btn"
+                            onClick={(e) => { e.stopPropagation(); onSave(block.id); }}
+                            title="Unsaved changes - Click to Save"
+                            style={{ color: '#FCD34D', animation: 'pulse 2s infinite' }} // Yellow/Orange warning color
+                        >
+                            <Save size={16} />
+                        </button>
+                    )}
                     {!hideAdd && onAdd && (
                         <button
                             className="block-add-btn"
@@ -158,7 +195,8 @@ export const BlockComponent = ({
                 <textarea
                     ref={textareaRef}
                     className="block-textarea"
-                    value={block.content}
+                    value={displayContent}
+                    spellCheck={false}
                     onChange={(e) => onUpdate && onUpdate(block.id, e.target.value)}
                     onClick={(e) => isEditable && e.stopPropagation()}
                     placeholder={`Enter ${block.type} here...`}
