@@ -12,42 +12,46 @@ export const Layout = ({ children }: LayoutProps) => {
 
     return (
         <div className="layout">
-            <header className="layout-header">
-                <div className="logo-section" onClick={() => setActiveView('home')} style={{ cursor: 'pointer' }}>
-                    <h2>PromptDock</h2>
+            <div className="layout-background-shapes">
+                <div className="shape shape-1"></div>
+                <div className="shape shape-2"></div>
+            </div>
+
+            <nav className="side-dock">
+                <div className="dock-logo" onClick={() => setActiveView('home')} title="Home">
+                    PD
                 </div>
-                <nav className="main-nav">
+                <div className="dock-items">
                     <button
-                        className={`nav-item ${activeView === 'home' ? 'active' : ''}`}
+                        className={`dock-item ${activeView === 'home' ? 'active' : ''}`}
                         onClick={() => setActiveView('home')}
                         title="Home"
                     >
-                        <Home size={20} />
+                        <Home size={24} />
                     </button>
                     <button
-                        className={`nav-item ${activeView === 'library' ? 'active' : ''}`}
+                        className={`dock-item ${activeView === 'library' ? 'active' : ''}`}
                         onClick={() => setActiveView('library')}
                         title="Library"
                     >
-                        <Library size={20} />
+                        <Library size={24} />
                     </button>
                     <button
-                        className={`nav-item ${activeView === 'builder' ? 'active' : ''}`}
+                        className={`dock-item ${activeView === 'builder' ? 'active' : ''}`}
                         onClick={() => setActiveView('builder')}
                         title="Builder"
                     >
-                        <Layers size={20} />
+                        <Layers size={24} />
                     </button>
-                    {/* Settings placeholder for now */}
                     <button
-                        className={`nav-item ${activeView === 'settings' ? 'active' : ''}`}
+                        className={`dock-item ${activeView === 'settings' ? 'active' : ''}`}
                         onClick={() => setActiveView('settings')}
                         title="Settings"
                     >
-                        <Settings size={20} />
+                        <Settings size={24} />
                     </button>
-                </nav>
-            </header>
+                </div>
+            </nav>
             <main className="layout-content">
                 {children}
             </main>
