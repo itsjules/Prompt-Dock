@@ -273,30 +273,52 @@ As a user, I want to find prompts and blocks even if I don’t remember their ex
 
 ---
 
-### Module 3 — Modular Prompt Builder (P0)
+### Module 3 — Modular Prompt Builder (DONE)
 
 **User Story**  
 As a user, I want to build prompts from reusable blocks instead of starting from scratch.
 
+**Implementation Results**
+- **Split-Pane Interface:** 
+    - **Sidebar:** Categorized library of reusable blocks (Role, Task, Context, etc.) searchable and draggable.
+    - **Canvas:** Central area for assembling and editing blocks.
+    - **Preview:** Live, real-time concatenation of block content.
+- **Block Interaction:**
+    - **Drag-and-Drop:** Intuitive drag-and-drop from library to canvas, and reordering within the canvas.
+    - **Manual Reordering:** Directional arrow buttons for precise block placement.
+    - **Inline Editing:** Auto-expanding textareas for direct content manipulation within blocks.
+    - **Block Persistence:** Capability to edit blocks with options to overwrite the original or save as a new copy.
+    - **Custom Creation:** "Quick Add" toast overlay for creating new blocks on the fly with category-specific guidance.
+- **Prompt Management:**
+    - **Full Save Workflow:** "Save" and "Save As" functionality with metadata (Title, Description, Tags).
+    - **Tagging System:** Pill-style tag inputs for easy organization.
+    - **Dirty State:** Visual indicators and prompts for unsaved changes to prevent data loss.
+- **Output:**
+    - **One-Click Copy:** Dedicated button with "Copied!" visual feedback.
+    - **Live Preview:** Scrollable, read-only view of the final compiled prompt.
+- **UI Refinements:**
+    - Collapsible sidebars for focused writing.
+    - Consistent styling with library views (buttons, icons, typography).
+
 **Acceptance Criteria**
-- Block-based editor with clear section headings
-- Blocks can be added, removed, edited
-- Reordering via drag & drop and buttons
-- Live preview of full prompt
-- One-click “Copy to Clipboard”
-- Saving functionality for prompts & prompt blocks
+- [x] Block-based editor with clear section headings
+- [x] Blocks can be added, removed, edited
+- [x] Reordering via drag & drop and buttons
+- [x] Live preview of full prompt
+- [x] One-click “Copy to Clipboard”
+- [x] Saving functionality for prompts & prompt blocks
 
 ---
 
 ### Module 4 — Feedback & Reuse Signals (P1)
 
 **User Story**  
-As a user, I want to mark prompts that worked well so I can easily reuse them.
+As a user, I want to mark prompts and prompt blocks that worked well so I can easily reuse them.
 
 **Acceptance Criteria**
-- Star or thumbs-up rating  
-- Filter and sort by rating  
-- Usage count tracked per prompt  
+- Star or thumbs-up rating for prompts & blocks (mark as favorites)  
+- Filter and sort by rating & usage count  
+- Usage count tracked per prompt & block (how often was it copied from the prompt builder to clipboard)
 
 
 ---
