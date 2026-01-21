@@ -1,4 +1,4 @@
-import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, Save } from 'lucide-react';
+import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, Save, Star } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useEffect, useRef } from 'react';
 import type { Block, BlockType } from '../../schemas/block.schema';
@@ -15,6 +15,7 @@ interface BlockProps {
     onMove?: (id: string, direction: 'up' | 'down') => void;
     onAdd?: (id: string) => void; // New prop for adding block to canvas
     onClick?: () => void; // New prop for click interaction
+    onToggleFavorite?: (id: string) => void; // New prop for favoriting
     // Display / Behavior Flags
     draggableId?: string;
     isDraggable?: boolean;
@@ -85,6 +86,7 @@ export const BlockComponent = ({
     onMove,
     onAdd,
     onClick,
+    onToggleFavorite,
     draggableId,
     isDraggable = true,
     isEditable = true,
@@ -142,6 +144,8 @@ export const BlockComponent = ({
                     <span className="block-type" style={{ color: accentColor, fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
                         {block.type.toUpperCase()}
                     </span>
+                    {/* Favorite Button (Inline next to type or absolute top right?) - Inline is tight. Let's put it in actions or absolute. 
+                        Actually, header actions is best. */}
                     {isEditable && onLabelUpdate ? (
                         <input
                             type="text"
@@ -159,6 +163,16 @@ export const BlockComponent = ({
                     )}
                 </div>
                 <div className="block-actions" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {onToggleFavorite && (
+                        <button
+                            className={`block-favorite-btn ${block.isFavorite ? 'active' : ''}`}
+                            onClick={(e) => { e.stopPropagation(); onToggleFavorite(block.id); }}
+                            title={block.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                            style={{ color: block.isFavorite ? '#ffb400' : accentColor, background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex' }}
+                        >
+                            <Star size={14} fill={block.isFavorite ? "currentColor" : "none"} />
+                        </button>
+                    )}
                     {isDirty && onSave && (
                         <button
                             className="block-save-btn"

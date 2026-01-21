@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowUpRight, Star, Clock, Grid, Plus, Search, User } from 'lucide-react';
+import { ArrowUpRight, Star, Clock, Grid, Plus, Search, User, FileText, CheckSquare, MessageSquare, Palette, ShieldAlert } from 'lucide-react';
 import { useUIStore, type LibraryTab } from '../../stores/useUIStore';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
+import { useBlockStore } from '../../stores/useBlockStore';
 import { CreateCollectionModal } from '../Library/CreateCollectionModal';
 import { SuggestionItem, SearchSuggestions } from './SearchSuggestions';
 import { RoleSelector } from '../Role/RoleSelector';
@@ -14,7 +15,8 @@ export const HomeView = () => {
     const { setActiveView, setLibraryTab, setSearchQuery, searchQuery, setActiveCollectionId, addRecentSearch } = useUIStore();
     const { getFavorites, getRecents } = usePromptStore();
     const { getAllCollections } = useCollectionStore();
-    const { setForNew, loadPrompt } = useBuilderStore();
+    const { setForNew, loadPrompt, addBlockId } = useBuilderStore();
+    const { getFavoriteBlocks } = useBlockStore();
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -43,8 +45,39 @@ export const HomeView = () => {
         });
     };
 
-    const favorites = sortWithRole(getFavorites(), 'prompt').slice(0, 3);
-    const recents = getRecents(3); // Recents should primarily be chronological
+    // Combine keys for sorting: Prompts and Blocks
+    const favoritePrompts = getFavorites();
+    const favoriteBlocks = getFavoriteBlocks();
+
+    // Map to unified shape for sorting
+    const unifiedFavorites = [
+        ...favoritePrompts.map(p => ({ ...p, uiType: 'prompt' as const })),
+        ...favoriteBlocks.map(b => ({ ...b, uiType: 'block' as const }))
+    ];
+
+    const sortUnified = (items: any[]) => {
+        return [...items].sort((a, b) => {
+            // Text for scoring
+            const textA = a.uiType === 'prompt' ? `${a.title} ${a.description || ''}` : `${a.label} ${a.content}`;
+            const textB = b.uiType === 'prompt' ? `${b.title} ${b.description || ''}` : `${b.label} ${b.content}`;
+
+            // Tags
+            const tagsA = a.uiType === 'prompt' ? [...(a.tags?.style || []), ...(a.tags?.topic || []), ...(a.tags?.technique || [])] : [];
+            const tagsB = b.uiType === 'prompt' ? [...(b.tags?.style || []), ...(b.tags?.topic || []), ...(b.tags?.technique || [])] : [];
+
+            const scoreA = getRelevanceScore(textA, tagsA);
+            const scoreB = getRelevanceScore(textB, tagsB);
+
+            if (scoreA !== scoreB) return scoreB - scoreA;
+            if (a.updatedAt && b.updatedAt) {
+                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+            }
+            return 0;
+        });
+    };
+
+    const favorites = sortUnified(unifiedFavorites).slice(0, 3);
+    const recents = getRecents(3);
     const collections = sortWithRole(getAllCollections(), 'collection').slice(0, 3);
 
     useEffect(() => {
@@ -79,11 +112,8 @@ export const HomeView = () => {
 
     const handleSelectSuggestion = (suggestion: SuggestionItem | string) => {
         const text = typeof suggestion === 'string' ? suggestion : suggestion.text;
-
-        // Add specific text to history
         addRecentSearch(text);
 
-        // Handle collection navigation
         if (typeof suggestion === 'object' && suggestion.type === 'collection' && suggestion.id) {
             setSearchQuery(''); // Clear search so we see the whole collection
             setIsSearchFocused(false);
@@ -91,7 +121,6 @@ export const HomeView = () => {
             return;
         }
 
-        // Default: Search in library
         setSearchQuery(text);
         setIsSearchFocused(false);
         setActiveView('library');
@@ -109,6 +138,29 @@ export const HomeView = () => {
             usePromptStore.getState().incrementUsage(promptId);
             loadPrompt(prompt);
             setActiveView('builder');
+        }
+    };
+
+    const handleOpenBlock = (blockId: string) => {
+        // When clicking a favorite block, start a new prompt with this block
+        const block = useBlockStore.getState().getBlock(blockId);
+        if (block) {
+            useBlockStore.getState().incrementUsage(blockId);
+            setForNew();
+            addBlockId(block.id); // Add the library block directly
+            setActiveView('builder');
+        }
+    };
+
+    const getBlockIcon = (blockType: string) => {
+        switch (blockType) {
+            case 'Role': return User;
+            case 'Task': return CheckSquare;
+            case 'Context': return FileText;
+            case 'Output': return MessageSquare;
+            case 'Style': return Palette;
+            case 'Constraints': return ShieldAlert;
+            default: return FileText;
         }
     };
 
@@ -162,12 +214,32 @@ export const HomeView = () => {
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontStyle: 'italic' }}>No favorites yet.</p>
                         ) : (
                             <div className="widget-item-list">
-                                {favorites.map(p => (
-                                    <div key={p.id} className="widget-item" onClick={() => handleOpenPrompt(p.id)}>
-                                        <div className="widget-item-title">{p.title}</div>
-                                        <div className="widget-item-desc">{p.description || 'No description'}</div>
-                                    </div>
-                                ))}
+                                {favorites.map(item => {
+                                    if (item.uiType === 'prompt') {
+                                        return (
+                                            <div key={item.id} className="widget-item" onClick={() => handleOpenPrompt(item.id)}>
+                                                <div className="widget-item-title">
+                                                    <span style={{ opacity: 0.7, marginRight: '4px' }}>📄</span>
+                                                    {item.title}
+                                                </div>
+                                                <div className="widget-item-desc">{item.description || 'No description'}</div>
+                                            </div>
+                                        );
+                                    } else {
+                                        // Block Item
+                                        // @ts-ignore
+                                        const Icon = getBlockIcon(item.type);
+                                        return (
+                                            <div key={item.id} className="widget-item" onClick={() => handleOpenBlock(item.id)}>
+                                                <div className="widget-item-title">
+                                                    <span style={{ opacity: 0.7, marginRight: '4px', display: 'inline-flex', alignItems: 'center' }}><Icon size={12} /></span>
+                                                    {item.label}
+                                                </div>
+                                                <div className="widget-item-desc">{item.content}</div>
+                                            </div>
+                                        );
+                                    }
+                                })}
                             </div>
                         )}
                     </div>

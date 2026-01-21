@@ -115,6 +115,9 @@
     min-height: 240px;
     position: relative;
     transition: transform 0.2s, border-color 0.2s;
+    min-width: 0;
+    /* Prevent grid blowout from wide content */
+    width: 100%;
 }
 
 .dashboard-widget:hover {

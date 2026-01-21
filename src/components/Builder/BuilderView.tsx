@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2, PanelLeftClose, PanelLeftOpen, Star } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
@@ -112,6 +112,7 @@ const CATEGORY_COLORS = [
 export const BuilderView = () => {
     const [selectedCategory, setSelectedCategory] = useState<BlockType>('Role');
     const [pickerSearch, setPickerSearch] = useState('');
+    const [filterFavorites, setFilterFavorites] = useState(false);
 
     // UI State
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -157,7 +158,7 @@ export const BuilderView = () => {
         setLocalBlockEdit,
         removeLocalBlockEdit
     } = useBuilderStore();
-    const { addBlock, updateBlock, getBlocksByType, addCategory, updateCategory, removeCategory, customCategories, incrementUsage: incrementBlockUsage } = useBlockStore();
+    const { addBlock, updateBlock, getBlocksByType, addCategory, updateCategory, removeCategory, customCategories, incrementUsage: incrementBlockUsage, toggleFavorite: toggleBlockFavorite } = useBlockStore();
     const blocksMap = useBlockStore(state => state.blocks);
     const { addPrompt, updatePrompt, getPrompt, incrementUsage: incrementPromptUsage } = usePromptStore();
 
@@ -175,13 +176,15 @@ export const BuilderView = () => {
     }, [selectedCategory, blocksMap]);
 
     // Search Filtering
+    // Search Filtering
     const filteredBlocks = useMemo(() => {
         const lowerSearch = pickerSearch.toLowerCase();
-        return categoryBlocks.filter(block =>
-            block.label?.toLowerCase().includes(lowerSearch) ||
-            block.content.toLowerCase().includes(lowerSearch)
-        );
-    }, [categoryBlocks, pickerSearch]);
+        return categoryBlocks.filter(block => {
+            const matchesSearch = block.label?.toLowerCase().includes(lowerSearch) || block.content.toLowerCase().includes(lowerSearch);
+            const matchesFav = filterFavorites ? block.isFavorite : true;
+            return matchesSearch && matchesFav;
+        });
+    }, [categoryBlocks, pickerSearch, filterFavorites]);
 
     const [isCopied, setIsCopied] = useState(false);
 
@@ -645,6 +648,14 @@ export const BuilderView = () => {
                                 <div className="pane-header">
                                     <h3>{selectedCategory}s</h3>
                                     <div className="picker-header-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <button
+                                            className={`icon-btn-ghost ${filterFavorites ? 'active' : ''}`}
+                                            onClick={() => setFilterFavorites(!filterFavorites)}
+                                            title="Filter Favorites"
+                                            style={{ color: filterFavorites ? '#ffb400' : 'var(--text-secondary)' }}
+                                        >
+                                            <Star size={16} fill={filterFavorites ? "currentColor" : "none"} />
+                                        </button>
                                         <div className="picker-search">
                                             <Search size={14} />
                                             <input
@@ -698,6 +709,7 @@ export const BuilderView = () => {
                                                         onUpdate={() => { }} // No-op
                                                         onDelete={() => { }} // No-op
                                                         onAdd={handleAddBlockToCanvas}
+                                                        onToggleFavorite={toggleBlockFavorite}
                                                         categoryColor={getCategoryColor(block.type)}
                                                     />
                                                 ))}
