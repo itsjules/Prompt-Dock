@@ -36,30 +36,42 @@ const TYPE_ICONS: Record<BlockType, React.ElementType> = {
 };
 
 // Templates for creating new blocks (Best Practices)
-const BLOCK_TEMPLATES: Record<BlockType, { hint: string, template: string }> = {
+const BLOCK_TEMPLATES: Record<BlockType, { hint: string, template: string, labelExample: string, contentTip: string }> = {
     Role: {
         hint: "Define who the AI is acting as. Be specific about expertise and traits.",
-        template: "Act as an expert [Role] who specializes in [Field]. You have deep knowledge of [Topic] and prioritize [Principle]."
+        template: "Act as an expert [Role] who specializes in [Field]. You have deep knowledge of [Topic] and prioritize [Principle].",
+        labelExample: "Frontend Expert",
+        contentTip: "Tip: Define the persona's specific expertise and point of view."
     },
     Task: {
         hint: "Define exactly what you want the AI to do. Start with an action verb.",
-        template: "Your task is to [Action] the following [Input]. Ensure you cover [Requirement 1] and [Requirement 2]."
+        template: "Your task is to [Action] the following [Input]. Ensure you cover [Requirement 1] and [Requirement 2].",
+        labelExample: "Summarize Text",
+        contentTip: "Tip: Use a direct action verb (e.g., 'Analyze', 'Write', 'Classify')."
     },
     Context: {
         hint: "Provide constraints, background info, or audience details.",
-        template: "The target audience is [Audience]. The tone should be [Tone]. Avoid [Negative Constraint]."
+        template: "The target audience is [Audience]. The tone should be [Tone]. Avoid [Negative Constraint].",
+        labelExample: "Target Audience",
+        contentTip: "Tip: Provide the 'who', 'where', and 'why' that frames the request."
     },
     Output: {
         hint: "Specify the exact format and structure of the response.",
-        template: "Return the result in [Format] format. Do not include [Exclusion]. Structure the response with the following headers: [Header 1], [Header 2]."
+        template: "Return the result in [Format] format. Do not include [Exclusion]. Structure the response with the following headers: [Header 1], [Header 2].",
+        labelExample: "JSON Format",
+        contentTip: "Tip: Define the exact format (e.g., 'JSON list', '3 bullet points')."
     },
     Style: {
         hint: "Define the tone, voice, and writing style.",
-        template: "Use a [Adjective] tone. specific vocabulary related to [Field]. Avoid passive voice."
+        template: "Use a [Adjective] tone. specific vocabulary related to [Field]. Avoid passive voice.",
+        labelExample: "Professional Tone",
+        contentTip: "Tip: Specify the tone (e.g. 'Formal', 'Witty') to guide the voice."
     },
     Constraints: {
         hint: "Hard limits on what the AI can/cannot do.",
-        template: "Do not use [Forbidden Element]. Limit response length to [Number] words."
+        template: "Do not use [Forbidden Element]. Limit response length to [Number] words.",
+        labelExample: "No Markdown",
+        contentTip: "Tip: Set hard boundaries (e.g. 'No jargon', 'Max 50 words')."
     }
 };
 
@@ -70,7 +82,9 @@ const getCategoryIcon = (type: string) => {
 const getCategoryTemplate = (type: string) => {
     return (BLOCK_TEMPLATES as any)[type] || {
         hint: "Define the content for this block.",
-        template: "Enter content here..."
+        template: "Enter content here...",
+        labelExample: "My Custom Block",
+        contentTip: "Tip: Be precise about what you want."
     };
 };
 
@@ -504,36 +518,7 @@ export const BuilderView = () => {
                                 <span>New {selectedCategory}</span>
                             </div>
 
-                            {/* Creation Form (Inline) */}
-                            {isCreatingBlock && (
-                                <div className="block-creation-form">
-                                    <div className="form-header">
-                                        <span>New {selectedCategory}</span>
-                                        <button className="close-btn" onClick={() => setIsCreatingBlock(false)}><X size={14} /></button>
-                                    </div>
-                                    <div className="form-hint">
-                                        {getCategoryTemplate(selectedCategory).hint}
-                                    </div>
-                                    <input
-                                        type="text"
-                                        placeholder="Label (e.g. 'Frontend Expert')"
-                                        value={newBlockLabel}
-                                        onChange={(e) => setNewBlockLabel(e.target.value)}
-                                        autoFocus
-                                        className="creation-input"
-                                    />
-                                    <textarea
-                                        placeholder="Content..."
-                                        value={newBlockContent}
-                                        onChange={(e) => setNewBlockContent(e.target.value)}
-                                        className="creation-textarea"
-                                        rows={4}
-                                    />
-                                    <button className="create-confirm-btn" onClick={handleSaveNewBlock}>
-                                        Create Block
-                                    </button>
-                                </div>
-                            )}
+
 
                             {/* Block List (Draggable Source) */}
                             <Droppable droppableId="library-list" isDropDisabled={true}>
@@ -820,13 +805,58 @@ export const BuilderView = () => {
                             </div>
 
                             <div className="toast-actions">
-                                <button className="secondary" onClick={() => setIsEditingCategory(false)}>Cancel</button>
+                                <button className="secondary" onClick={() => handleDeleteCategory(editingCategoryName)}>Delete</button>
                                 <button className="primary" onClick={handleSaveEditCategory}>Save Changes</button>
                             </div>
                         </div>
                     </div>
                 )
             }
+
+            {/* BLOCK CREATION TOAST */}
+            {isCreatingBlock && (
+                <div className="category-creation-overlay">
+                    <div className="category-creation-toast">
+                        <div className="toast-header">
+                            <h3>New {selectedCategory}</h3>
+                            <button onClick={() => setIsCreatingBlock(false)}><X size={16} /></button>
+                        </div>
+
+                        <div className="form-hint" style={{ marginBottom: '1rem' }}>
+                            {getCategoryTemplate(selectedCategory).hint}
+                            <div style={{ marginTop: '0.4rem', color: 'var(--accent-primary)', fontStyle: 'normal' }}>
+                                {getCategoryTemplate(selectedCategory).contentTip}
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Label</label>
+                            <input
+                                type="text"
+                                placeholder={`Label (e.g. '${getCategoryTemplate(selectedCategory).labelExample}')`}
+                                value={newBlockLabel}
+                                onChange={(e) => setNewBlockLabel(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Content</label>
+                            <textarea
+                                placeholder="Content..."
+                                value={newBlockContent}
+                                onChange={(e) => setNewBlockContent(e.target.value)}
+                                rows={6}
+                            />
+                        </div>
+
+                        <div className="toast-actions">
+                            <button className="secondary" onClick={() => setIsCreatingBlock(false)}>Cancel</button>
+                            <button className="primary" onClick={handleSaveNewBlock}>Create Block</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
