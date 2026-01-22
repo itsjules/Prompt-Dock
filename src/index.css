@@ -20,36 +20,36 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 
-  /* Earthy Bauhaus Palette (Dark Mode - Deep Slate) */
-  --bg-primary: #172121;
-  /* Deepest Slate Teal */
-  --bg-secondary: #223030;
-  /* Lighter Teal Panel */
-  --bg-tertiary: #2D4040;
+  /* Earthy Bauhaus Palette (Dark Mode - Vibrant Teal) */
+  --bg-primary: #1A2626;
+  /* Richer Slate Teal */
+  --bg-secondary: #253838;
+  /* Lighter/Vibrant Panel */
+  --bg-tertiary: #314949;
   /* Hover/Input Fill */
 
   --text-primary: #EAE0D5;
-  /* Warm Bone/Sand */
-  --text-secondary: #9DAAAA;
-  /* Muted Sage Gray */
+  /* Warm Bone */
+  --text-secondary: #A7B8B8;
+  /* Lighter Sage Gray */
   --text-inverse: #101616;
 
   /* Accents - Burnt Orange & Gold */
-  --accent-primary: #E07A5F;
-  /* Terra Cotta */
-  --accent-primary-rgb: 224, 122, 95;
-  --accent-hover: #C56146;
-  /* Darker Clay */
+  --accent-primary: #EE8164;
+  /* Brighter Terra Cotta */
+  --accent-primary-rgb: 238, 129, 100;
+  --accent-hover: #D46A4D;
+  /* Deep Vibrant Clay */
 
-  --accent-secondary: #F2CC8F;
-  /* Muted Gold */
-  --accent-tertiary: #6D597A;
-  /* Deep Aubergine (optional) */
-  --accent-success: #81B29A;
-  /* Sage Green */
+  --accent-secondary: #F4D39E;
+  /* Bright Muted Gold */
+  --accent-tertiary: #7D658C;
+  /* Lighter Aubergine */
+  --accent-success: #8FC9AD;
+  /* Bright Sage */
 
-  --border-color: #354646;
-  /* Subtle Teal Border */
+  --border-color: #3E5454;
+  /* Vibrant Teal Border */
 
   /* Shapes & Geometry */
   --radius-sm: 6px;

@@ -1,7 +1,7 @@
 import { useUIStore } from '../stores/useUIStore';
 import { Layers, Library, Settings, Home } from 'lucide-react';
 import './Layout.css';
-import './Layout.css';
+import logo from '../assets/logo.png';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -19,7 +19,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
             <nav className="side-dock">
                 <div className="dock-logo" onClick={() => setActiveView('home')} title="Home">
-                    PD
+                    <img src={logo} alt="PromptDock" />
                 </div>
                 <div className="dock-items">
                     <button
