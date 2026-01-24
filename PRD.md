@@ -2,7 +2,7 @@
 *A Modular Prompt Building Desktop Tool*
 
 **Author:** Julia Podlipensky  
-**PRDVersion:** v1.2 
+**PRDVersion:** v1.3 
 **Reference:** Concept proposal slides + PRD Co-Pilot
 
 ---
@@ -137,6 +137,8 @@ The tool is **local-first, private, and optimized for fast, daily workflows**.
   - topic
   - prompt technique
 - Multiple library views (list / grouped)
+
+**P2 Enhancements**
 - **Related Prompts & Derivations View**
   - Optional secondary view accessible from a prompt or template
   - Shows prompts **derived from the same template** or **sharing common blocks**
@@ -334,8 +336,27 @@ As a user, I want to mark prompts and prompt blocks that worked well so I can ea
 
 
 ---
+### Module 5 — Prompt Imports & Dissection (P1 necessary addition)
 
-### Module 5 — Prompt Relationships (Concept / P2)
+**User Story**  
+As a learner, I want to easily import full prompts and get them dissected into prompt blocks, so I can understand their structure and reuse the full prompt & its parts modularly.
+
+**Acceptance Criteria**
+- Import Flow: Users can paste raw text or drag-and-drop documents (.txt, .md, .docx, .pdf) into a dedicated import staging area.
+- Automated Dissection:
+ - System automatically identifies potential blocks (Role, Task, Context, etc.) based on linguistic patterns and keywords.
+ - Support for detecting standard structural markers (e.g., # Role, Constraints:).
+ - User can still dissect it manually or make fine-grained adjustments.
+- Interactive Staging Canvas:
+ - Visual preview of the dissected components.
+ - Ability to manually override block categories via a dropdown.
+ - Support for splitting a single block into two or merging multiple blocks.
+ - Inline editing of text before final import.
+ - Library Sync: One-click "Apply" to save the structure as a new Prompt in the library and save individual dissected segments as reusable Blocks.
+
+---
+
+### Module 6 — Prompt Relationships (Concept / P1)
 
 **User Story**  
 As a learner, I want to understand how prompts are derived or related.
