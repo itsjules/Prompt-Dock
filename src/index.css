@@ -3,12 +3,24 @@
 *::before,
 *::after {
   box-sizing: border-box;
+  font-family: var(--font-body);
+}
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  margin: 0;
 }
 
 :root {
   /* Typography */
-  --font-heading: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
-  --font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-body: 'Space Grotesk', system-ui, -apple-system, sans-serif;
 
   font-family: var(--font-body);
   line-height: 1.6;

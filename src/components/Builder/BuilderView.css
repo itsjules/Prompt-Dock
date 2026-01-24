@@ -524,7 +524,9 @@
 .full-prompt-text {
     background: var(--bg-primary);
     border: none;
-    font-family: 'DM Mono', monospace;
+    font-family: var(--font-body);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
     padding: 2rem;
 }
 

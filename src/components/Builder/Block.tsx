@@ -32,14 +32,23 @@ interface BlockProps {
     isDirty?: boolean;
     isCompact?: boolean; // New: Compact mode for picker
 }
+//----Old Colors--------
+// const BLOCK_COLORS: Record<BlockType, string> = {
+//     Role: '#264868ff',        // Rich Ocean (Teal)
+//     Task: '#49375fff',        // Rich Indigo (Was Aubergine)
+//     Context: '#85621eff',     // Rich Mustard (Bronze)
+//     Output: '#3b6646ff',      // Rich Sage (Forest)
+//     Style: '#7e2a58ff',       // Rich Raspberry (Was Lavender)
+//     Constraints: '#7D3535', // Rich Rosewood (Terra Cotta)
+// };
 
 const BLOCK_COLORS: Record<BlockType, string> = {
-    Role: '#264868ff',        // Rich Ocean (Teal)
+    Role: '#214357ff',        // Rich Ocean (Teal)
     Task: '#49375fff',        // Rich Indigo (Was Aubergine)
-    Context: '#85621eff',     // Rich Mustard (Bronze)
-    Output: '#3b6646ff',      // Rich Sage (Forest)
-    Style: '#7e2a58ff',       // Rich Raspberry (Was Lavender)
-    Constraints: '#7D3535', // Rich Rosewood (Terra Cotta)
+    Context: '#64480eff',     // Rich Mustard (Bronze)
+    Output: '#2f4933ff',      // Rich Sage (Forest)
+    Style: '#662b4fff',       // Rich Raspberry (Was Lavender)
+    Constraints: '#6e2f2fff', // Rich Rosewood (Terra Cotta)
 };
 
 // Accent colors: Keep these vibrant for the "pop" (borders)
