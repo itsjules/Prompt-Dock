@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2, PanelLeftClose, PanelLeftOpen, Star } from 'lucide-react';
+import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2, PanelLeftClose, PanelLeftOpen, Star } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { useBlockStore } from '../../stores/useBlockStore';
@@ -907,16 +907,16 @@ export const BuilderView = () => {
                         <p style={{ padding: '0 1.5rem', marginBottom: '1rem', color: '#ccc', fontSize: '0.9rem', lineHeight: '1.5' }}>
                             You have modified <strong>{blocksMap[blockSaveCandidate]?.label}</strong>. How would you like to save these changes?
                         </p>
-                        <div className="toast-actions" style={{ flexDirection: 'column', gap: '0.5rem', alignItems: 'stretch' }}>
-                            <button className="primary" onClick={() => handleResolveBlockSave('overwrite')}>
+                        <div className="toast-actions" style={{ flexDirection: 'column', gap: '0.75rem', alignItems: 'stretch' }}>
+                            <button className="resolve-btn primary" onClick={() => handleResolveBlockSave('overwrite')}>
                                 Overwrite Original
-                                <span style={{ display: 'block', fontSize: '0.75rem', opacity: 0.7, fontWeight: 400 }}>Updates this block everywhere it's used.</span>
+                                <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, fontWeight: 400 }}>Updates this block everywhere it's used.</span>
                             </button>
-                            <button className="secondary" onClick={() => handleResolveBlockSave('fork')}>
+                            <button className="resolve-btn secondary" onClick={() => handleResolveBlockSave('fork')}>
                                 Save as Copy
-                                <span style={{ display: 'block', fontSize: '0.75rem', opacity: 0.7, fontWeight: 400 }}>Creates a new block. Best for safe editing.</span>
+                                <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, fontWeight: 400 }}>Creates a new block. Best for safe editing.</span>
                             </button>
-                            <button className="secondary danger" onClick={() => handleResolveBlockSave('discard')} style={{ marginTop: '0.5rem' }}>
+                            <button className="resolve-btn danger" onClick={() => handleResolveBlockSave('discard')} style={{ marginTop: '0.25rem', padding: '0.75rem' }}>
                                 Discard Changes
                             </button>
                         </div>
@@ -1052,7 +1052,7 @@ export const BuilderView = () => {
             {/* BLOCK CREATION TOAST */}
             {isCreatingBlock && createPortal(
                 <div className="category-creation-overlay">
-                    <div className="category-creation-toast">
+                    <div className="category-creation-toast block-creation-modal">
                         <div className="toast-header">
                             <h3>New {selectedCategory}</h3>
                             <button onClick={() => setIsCreatingBlock(false)}><X size={16} /></button>
@@ -1060,9 +1060,6 @@ export const BuilderView = () => {
 
                         <div className="form-hint" style={{ marginBottom: '1rem' }}>
                             {getCategoryTemplate(selectedCategory).hint}
-                            <div style={{ marginTop: '0.4rem', color: 'var(--accent-primary)', fontStyle: 'normal' }}>
-                                {getCategoryTemplate(selectedCategory).contentTip}
-                            </div>
                         </div>
 
                         <div className="form-group">
@@ -1087,8 +1084,8 @@ export const BuilderView = () => {
                         </div>
 
                         <div className="toast-actions">
-                            <button className="secondary" onClick={() => setIsCreatingBlock(false)}>Cancel</button>
-                            <button className="primary" onClick={handleSaveNewBlock}>Create Block</button>
+                            <button className="footer-btn secondary" onClick={() => setIsCreatingBlock(false)}>Cancel</button>
+                            <button className="footer-btn primary" onClick={handleSaveNewBlock}>Create Block</button>
                         </div>
                     </div>
                 </div>,
