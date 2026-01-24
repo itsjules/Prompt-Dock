@@ -604,7 +604,6 @@ export const BuilderView = () => {
                                                 >
                                                     <Icon size={16} />
                                                     <span>{type}</span>
-                                                    {selectedCategory === type && <ChevronRight className="active-indicator" size={14} />}
                                                 </button>
                                                 {isCustom && (
                                                     <div className="category-menu-container">

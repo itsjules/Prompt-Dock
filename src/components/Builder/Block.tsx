@@ -34,11 +34,11 @@ interface BlockProps {
 }
 
 const BLOCK_COLORS: Record<BlockType, string> = {
-    Role: '#2A5252',        // Rich Ocean (Teal)
-    Task: '#39395f',        // Rich Indigo (Was Aubergine)
-    Context: '#755C2B',     // Rich Mustard (Bronze)
-    Output: '#406352',      // Rich Sage (Forest)
-    Style: '#663344',       // Rich Raspberry (Was Lavender)
+    Role: '#264868ff',        // Rich Ocean (Teal)
+    Task: '#49375fff',        // Rich Indigo (Was Aubergine)
+    Context: '#85621eff',     // Rich Mustard (Bronze)
+    Output: '#3b6646ff',      // Rich Sage (Forest)
+    Style: '#7e2a58ff',       // Rich Raspberry (Was Lavender)
     Constraints: '#7D3535', // Rich Rosewood (Terra Cotta)
 };
 

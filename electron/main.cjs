@@ -13,6 +13,7 @@ function createWindow() {
         show: false, // Start hidden
         alwaysOnTop: false,
         frame: true,
+        autoHideMenuBar: true, // Hide default menu
         webPreferences: {
             preload: path.join(__dirname, 'preload.cjs'),
             contextIsolation: true,
@@ -20,6 +21,10 @@ function createWindow() {
         },
         icon: path.join(__dirname, '../resources/icon.png')
     });
+
+    // Explicitly remove the menu bar (Windows/Linux)
+    mainWindow.setMenu(null);
+
 
     // Load the app
     const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
@@ -45,6 +50,13 @@ function createWindow() {
                 mainWindow.show();
                 mainWindow.focus();
             }
+        }
+    });
+
+    // Add explicit shortcut for DevTools since menu is hidden
+    globalShortcut.register('CommandOrControl+Shift+I', () => {
+        if (mainWindow) {
+            mainWindow.webContents.toggleDevTools();
         }
     });
 

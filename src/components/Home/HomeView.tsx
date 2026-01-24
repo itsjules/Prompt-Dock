@@ -222,7 +222,6 @@ export const HomeView = () => {
                                                     <span style={{ opacity: 0.7, marginRight: '4px' }}>📄</span>
                                                     {item.title}
                                                 </div>
-                                                <div className="widget-item-desc">{item.description || 'No description'}</div>
                                             </div>
                                         );
                                     } else {
@@ -235,7 +234,6 @@ export const HomeView = () => {
                                                     <span style={{ opacity: 0.7, marginRight: '4px', display: 'inline-flex', alignItems: 'center' }}><Icon size={12} /></span>
                                                     {item.label}
                                                 </div>
-                                                <div className="widget-item-desc">{item.content}</div>
                                             </div>
                                         );
                                     }

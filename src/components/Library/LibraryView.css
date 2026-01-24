@@ -2,12 +2,14 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    padding: 1.5rem 2rem;
 }
 
 .library-tabs {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
+    margin-top: 0.5rem;
     border-bottom: 1px solid var(--border-color);
     padding: 0 0.5rem;
 }
@@ -415,10 +417,12 @@
     pointer-events: auto;
     /* Re-enable clicks on hover */
 }
+
 .favorite-btn-mini {
     background: transparent;
     border: none;
-    color: white; /* Header is usually colored, so white star looks good */
+    color: white;
+    /* Header is usually colored, so white star looks good */
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
@@ -468,4 +472,3 @@
     background: rgba(124, 58, 237, 0.1);
     font-weight: 500;
 }
-
