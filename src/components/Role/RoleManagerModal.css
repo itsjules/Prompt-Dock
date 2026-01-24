@@ -7,7 +7,13 @@
     padding: 0.5rem 1rem;
 }
 
-margin-bottom: 1rem;
+.role-manager-modal .modal-header {
+    padding-left: 0;
+    padding-right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
 }
 
 .role-list-container {
