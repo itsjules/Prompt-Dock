@@ -336,23 +336,38 @@ As a user, I want to mark prompts and prompt blocks that worked well so I can ea
 
 
 ---
-### Module 5 — Prompt Imports & Dissection (P1 necessary addition)
+### Module 5 — Prompt Imports & Dissection (DONE)
 
 **User Story**  
 As a learner, I want to easily import full prompts and get them dissected into prompt blocks, so I can understand their structure and reuse the full prompt & its parts modularly.
 
+**Implementation Results**
+- **Linear Import Flow:** Three-stage wizard (Input -> Dissect -> Review) for clear progression.
+- **Smart Dissection Engine:**
+    - Automatically splits raw text into functional blocks (Role, Task, Context, etc.) based on structural analysis.
+    - assigns confidence scores to blocks to guide user review.
+- **Interactive Dissection Canvas:**
+    - "Playground" style interface where users can add, remove, and edit blocks before finalizing.
+    - Real-time confidence indicators.
+- **Review & Metadata:**
+    - Final review step with side-by-side Details and Block Preview.
+    - Full metadata support including Title, Description, and Tagging (reusing the Builder's tag input system).
+    - **Dual Save Options:** Users can "Save to Library" (Primary) or "Save & Open in Builder" (Secondary) to immediately continue refining the imported prompt.
+- **UI Experience:**
+    - "Focus Mode" layout without the standard sidebar to minimize distraction during import.
+
 **Acceptance Criteria**
-- Import Flow: Users can paste raw text or drag-and-drop documents (.txt, .md, (for later in P2:.docx, .pdf)) into a dedicated import staging area.
-- Automated Dissection:
- - System automatically identifies potential blocks (Role, Task, Context, etc.) based on linguistic patterns and keywords.
- - Support for detecting standard structural markers (e.g., # Role, Constraints:).
- - User can still dissect it manually or make fine-grained adjustments.
-- Interactive Staging Canvas:
- - Visual preview of the dissected components.
- - Ability to manually override block categories via a dropdown.
- - Support for splitting a single block into two or merging multiple blocks.
- - Inline editing of text before final import.
- - Library Sync: One-click "Apply" to save the structure as a new Prompt in the library and save individual dissected segments as reusable Blocks.
+- [x] Import Flow: Users can paste raw text or drag-and-drop documents (.txt, .md, (for later in P2:.docx, .pdf)) into a dedicated import staging area.(pdf & docx for later in P2)
+- [x] Automated Dissection:
+ - [x] System automatically identifies potential blocks (Role, Task, Context, etc.) based on linguistic patterns and keywords.
+ - [x] Support for detecting standard structural markers (e.g., # Role, Constraints:).
+ - [x] User can still dissect it manually or make fine-grained adjustments.
+- [x] Interactive Staging Canvas:
+ - [x] Visual preview of the dissected components.
+ - [x] Ability to manually override block categories via a dropdown.
+ - [x] Support for splitting a single block into two or merging multiple blocks (via Add/Edit flow).
+ - [x] Inline editing of text before final import.
+ - [x] Library Sync: One-click "Apply" to save the structure as a new Prompt in the library and save individual dissected segments as reusable Blocks.
 
 ---
 
