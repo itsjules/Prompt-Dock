@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Fuse from 'fuse.js';
-import { Star, Clock, Grid, Tag, FolderPlus, Plus, Copy, Trash2, Filter, X, CheckSquare, ChevronDown, Repeat, ArrowUpDown, Upload } from 'lucide-react';
+import { Star, Grid, Tag, FolderPlus, Plus, Copy, Trash2, Filter, X, CheckSquare, ChevronDown, Repeat, ArrowUpDown, Upload } from 'lucide-react';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBlockStore } from '../../stores/useBlockStore';
@@ -293,32 +293,21 @@ export const LibraryView = () => {
 
     return (
         <div className="library-view">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', padding: '0 2rem' }}>
                 <div style={{ flex: 1 }}>
                     <SearchBar />
                 </div>
                 {/* Import Prompt Button */}
+                {/* Import Prompt Button */}
                 <button
-                    className="btn-primary"
+                    className="filter-toggle-btn"
                     onClick={() => setActiveView('import')}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.625rem 1rem',
-                        fontSize: '0.875rem',
-                        flexShrink: 0,
-                    }}
+                    style={{ marginLeft: 'auto' }}
                     title="Import a prompt from text or file"
                 >
-                    <Upload size={16} />
-                    Import Prompt
+                    <Upload size={14} />
+                    <span>Import Prompt</span>
                 </button>
-                {/* Role Selector (Inline) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Prioritizing:</span>
-                    <RoleSelector />
-                </div>
             </div>
 
             {/* Library Tabs */}
@@ -337,13 +326,7 @@ export const LibraryView = () => {
                     <Star size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
                     Favorites
                 </button>
-                <button
-                    className={`tab-btn ${activeTab === 'recents' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('recents')}
-                >
-                    <Clock size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-                    Recents
-                </button>
+
                 <button
                     className={`tab-btn ${activeTab === 'collections' ? 'active' : ''}`}
                     onClick={() => setActiveTab('collections')}
@@ -352,7 +335,14 @@ export const LibraryView = () => {
                     Collections
                 </button>
 
+
                 <div style={{ flex: 1 }} /> {/* Spacer */}
+
+                {/* Role Selector (Moved here) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '0.5rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Prioritizing:</span>
+                    <RoleSelector size="small" />
+                </div>
 
                 {/* Sorting Dropdown */}
                 <div className="filter-popover-wrapper" style={{ position: 'relative', marginRight: '0.5rem' }}>

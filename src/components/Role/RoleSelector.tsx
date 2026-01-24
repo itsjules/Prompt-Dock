@@ -4,7 +4,11 @@ import { useRoleStore } from '../../stores/useRoleStore';
 import { RoleManagerModal } from './RoleManagerModal';
 import './RoleSelector.css';
 
-export const RoleSelector = () => {
+interface RoleSelectorProps {
+    size?: 'default' | 'small';
+}
+
+export const RoleSelector = ({ size = 'default' }: RoleSelectorProps) => {
     const { roles, activeRoleId, setActiveRole, activeRole } = useRoleStore();
     const [isOpen, setIsOpen] = useState(false);
     const [showManager, setShowManager] = useState(false);
@@ -35,13 +39,13 @@ export const RoleSelector = () => {
 
     return (
         <>
-            <div className="role-selector-container" ref={dropdownRef}>
+            <div className={`role-selector-container ${size}`} ref={dropdownRef}>
                 <button
-                    className={`role-selector-btn ${isOpen ? 'active' : ''}`}
+                    className={`role-selector-btn ${size} ${isOpen ? 'active' : ''}`}
                     onClick={() => setIsOpen(!isOpen)}
                     title="Select Role"
                 >
-                    <User size={16} />
+                    <User size={size === 'small' ? 14 : 16} />
                     <span>{activeRole?.name || 'Select Role'}</span>
                     <ChevronDown size={14} style={{ opacity: 0.5 }} />
                 </button>

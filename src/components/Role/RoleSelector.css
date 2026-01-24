@@ -120,3 +120,19 @@
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
 }
+
+.role-selector-btn.small {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    border-radius: 16px;
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+}
+
+.role-selector-btn.small:hover,
+.role-selector-btn.small.active {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}

@@ -248,9 +248,6 @@ export const HomeView = () => {
                 <div className="dashboard-widget">
                     <div className="widget-header">
                         <h3><Clock size={16} /> Recent</h3>
-                        <button className="widget-action" onClick={() => handleNavigateToLibrary('recents')}>
-                            <ArrowUpRight size={18} />
-                        </button>
                     </div>
                     <div className="widget-content">
                         {recents.length === 0 ? (
