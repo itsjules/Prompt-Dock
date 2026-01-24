@@ -5,10 +5,10 @@ import './Import.css';
 
 interface ImportInputProps {
     onNext: (content: string, source: { type: 'text' | 'file'; filename?: string }) => void;
-    onSaveFullPrompt: (content: string, source: { type: 'text' | 'file'; filename?: string }) => void;
 }
 
-export const ImportInput: React.FC<ImportInputProps> = ({ onNext, onSaveFullPrompt }) => {
+
+export const ImportInput: React.FC<ImportInputProps> = ({ onNext }) => {
     const [textInput, setTextInput] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -89,27 +89,7 @@ export const ImportInput: React.FC<ImportInputProps> = ({ onNext, onSaveFullProm
         }
     };
 
-    const handleSaveFullPrompt = async () => {
-        setError(null);
 
-        try {
-            if (selectedFile) {
-                const content = await readFile(selectedFile);
-                onSaveFullPrompt(content, {
-                    type: 'file',
-                    filename: selectedFile.name,
-                });
-            } else if (textInput.trim()) {
-                onSaveFullPrompt(textInput, {
-                    type: 'text',
-                });
-            } else {
-                setError('Please enter text or select a file to import.');
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to read file');
-        }
-    };
 
     const hasInput = textInput.trim().length > 0 || selectedFile !== null;
 
@@ -132,6 +112,7 @@ Create a function that..."
                     value={textInput}
                     onChange={handleTextChange}
                     disabled={selectedFile !== null}
+                    spellCheck={false}
                 />
                 {textInput && (
                     <div className="import-char-count">
@@ -209,14 +190,6 @@ Create a function that..."
 
             {/* Actions */}
             <div className="import-actions">
-                <button
-                    className="import-button import-button-secondary"
-                    onClick={handleSaveFullPrompt}
-                    disabled={!hasInput}
-                    title="Save the entire prompt as one block without dissecting"
-                >
-                    Save as Full Prompt
-                </button>
                 <button
                     className="import-button import-button-primary"
                     onClick={handleNext}

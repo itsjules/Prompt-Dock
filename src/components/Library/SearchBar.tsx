@@ -15,6 +15,7 @@ export const SearchBar = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
+                spellCheck={false}
             />
         </div>
     );

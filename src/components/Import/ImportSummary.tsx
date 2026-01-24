@@ -4,8 +4,13 @@ import { useImportStore } from '../../stores/useImportStore';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { usePromptStore } from '../../stores/usePromptStore';
 import './Import.css';
+import { Library, Layers, ArrowLeft, X } from 'lucide-react';
 
-export const ImportSummary: React.FC = () => {
+interface ImportSummaryProps {
+    onBack: () => void;
+}
+
+export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
     const { setActiveView } = useUIStore();
     const { currentSession, clearSession } = useImportStore();
     const { importBlocks } = useBlockStore();
@@ -17,6 +22,10 @@ export const ImportSummary: React.FC = () => {
     const [promptDescription, setPromptDescription] = useState(
         currentSession?.metadata?.promptDescription || ''
     );
+    // Tag State
+    const [tagInput, setTagInput] = useState('');
+    const [tags, setTags] = useState<string[]>([]);
+
     const [isSaving, setIsSaving] = useState(false);
 
     if (!currentSession) return null;
@@ -42,7 +51,7 @@ export const ImportSummary: React.FC = () => {
                 blocks: blockIds,
                 tags: {
                     style: [],
-                    topic: [],
+                    topic: tags, // Store all tags in topic for now as per SaveMetadataModal simplicity
                     technique: [],
                 },
                 importedFrom: source.filename || 'pasted text',
@@ -59,6 +68,23 @@ export const ImportSummary: React.FC = () => {
         }
     };
 
+    const handleTagKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const trimmed = tagInput.trim();
+            if (trimmed && !tags.includes(trimmed)) {
+                setTags([...tags, trimmed]);
+                setTagInput('');
+            }
+        } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+            setTags(tags.slice(0, -1));
+        }
+    };
+
+    const removeTag = (tagToRemove: string) => {
+        setTags(tags.filter(t => t !== tagToRemove));
+    };
+
     const handleGoToBuilder = async () => {
         await handleSave();
         setActiveView('builder');
@@ -66,119 +92,173 @@ export const ImportSummary: React.FC = () => {
 
     return (
         <div className="import-summary">
-            <div className="import-summary-stats">
-                <div className="import-summary-stat">
-                    <div className="import-summary-stat-value">{blocks.length}</div>
-                    <div className="import-summary-stat-label">Blocks Created</div>
-                </div>
-                <div className="import-summary-stat">
-                    <div className="import-summary-stat-value">
-                        {blocks.filter((b) => b.isManual).length}
-                    </div>
-                    <div className="import-summary-stat-label">Manual Adjustments</div>
-                </div>
-                <div className="import-summary-stat">
-                    <div className="import-summary-stat-value">
-                        {blocks.filter((b) => b.confidence >= 80).length}
-                    </div>
-                    <div className="import-summary-stat-label">High Confidence</div>
-                </div>
-            </div>
-
-            <div className="import-input-section">
-                <h2>Prompt Details</h2>
-                <p>Give your imported prompt a title and description.</p>
-
-                <div style={{ marginBottom: '1rem' }}>
-                    <label
-                        style={{
-                            display: 'block',
-                            fontSize: '0.875rem',
-                            color: 'var(--text-secondary)',
-                            marginBottom: '0.5rem',
-                        }}
-                    >
-                        Title *
-                    </label>
-                    <input
-                        type="text"
-                        value={promptTitle}
-                        onChange={(e) => setPromptTitle(e.target.value)}
-                        placeholder="Enter prompt title..."
-                        style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            backgroundColor: 'var(--bg-tertiary)',
-                            border: '2px solid var(--border-color)',
-                            borderRadius: 'var(--radius-md)',
-                            color: 'var(--text-primary)',
-                            fontSize: '0.9375rem',
-                        }}
-                    />
-                </div>
-
-                <div>
-                    <label
-                        style={{
-                            display: 'block',
-                            fontSize: '0.875rem',
-                            color: 'var(--text-secondary)',
-                            marginBottom: '0.5rem',
-                        }}
-                    >
-                        Description (optional)
-                    </label>
-                    <textarea
-                        value={promptDescription}
-                        onChange={(e) => setPromptDescription(e.target.value)}
-                        placeholder="Add a description..."
-                        style={{
-                            width: '100%',
-                            minHeight: '100px',
-                            padding: '0.75rem',
-                            backgroundColor: 'var(--bg-tertiary)',
-                            border: '2px solid var(--border-color)',
-                            borderRadius: 'var(--radius-md)',
-                            color: 'var(--text-primary)',
-                            fontSize: '0.9375rem',
-                            resize: 'vertical',
-                        }}
-                    />
-                </div>
-            </div>
-
-            <div className="import-summary-preview">
-                <h3>Block Preview</h3>
-                <div className="import-summary-block-list">
-                    {blocks.map((block, index) => (
-                        <div key={block.id} className="import-summary-block-item">
-                            <div className="import-summary-block-type">
-                                {index + 1}. {block.suggestedType}
-                            </div>
-                            <div className="import-summary-block-preview">
-                                {block.content.substring(0, 100)}
-                                {block.content.length > 100 ? '...' : ''}
-                            </div>
+            <div className="import-summary-content-grid">
+                {/* Left Column: Block Preview + Stats */}
+                <div className="import-summary-preview">
+                    {/* Compact Stats Embedded Here */}
+                    <div className="import-summary-stats">
+                        <div className="import-summary-stat">
+                            <div className="import-summary-stat-value">{blocks.length}</div>
+                            <div className="import-summary-stat-label">Blocks</div>
                         </div>
-                    ))}
+                        <div className="import-summary-stat">
+                            <div className="import-summary-stat-value">
+                                {blocks.filter((b) => b.isManual).length}
+                            </div>
+                            <div className="import-summary-stat-label">Manual</div>
+                        </div>
+                        <div className="import-summary-stat">
+                            <div className="import-summary-stat-value">
+                                {blocks.filter((b) => b.confidence >= 80).length}
+                            </div>
+                            <div className="import-summary-stat-label">High Conf.</div>
+                        </div>
+                    </div>
+
+                    <h3 style={{ marginTop: '1.5rem' }}>Block Preview</h3>
+                    <div className="import-summary-block-list">
+                        {blocks.map((block, index) => (
+                            <div key={block.id} className="import-summary-block-item">
+                                <div className="import-summary-block-type">
+                                    {index + 1}. {block.suggestedType}
+                                </div>
+                                <div className="import-summary-block-preview">
+                                    {block.content.substring(0, 100)}
+                                    {block.content.length > 100 ? '...' : ''}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Right Column: Prompt Details */}
+                <div className="import-input-section">
+                    <h2>Prompt Details</h2>
+                    <p style={{ marginBottom: '1rem' }}>Give your imported prompt a title and description.</p>
+
+                    <div style={{ marginBottom: '1rem' }}>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: '0.875rem',
+                                color: 'var(--text-secondary)',
+                                marginBottom: '0.5rem',
+                            }}
+                        >
+                            Title *
+                        </label>
+                        <input
+                            type="text"
+                            value={promptTitle}
+                            onChange={(e) => setPromptTitle(e.target.value)}
+                            placeholder="Enter prompt title..."
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                backgroundColor: 'var(--bg-tertiary)',
+                                border: '2px solid var(--border-color)',
+                                borderRadius: 'var(--radius-md)',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.9375rem',
+                            }}
+                            spellCheck={false}
+                        />
+                    </div>
+
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginBottom: '1rem' }}>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: '0.875rem',
+                                color: 'var(--text-secondary)',
+                                marginBottom: '0.5rem',
+                            }}
+                        >
+                            Description (optional)
+                        </label>
+                        <textarea
+                            value={promptDescription}
+                            onChange={(e) => setPromptDescription(e.target.value)}
+                            placeholder="Add a description..."
+                            style={{
+                                width: '100%',
+                                flex: 1, // Fill remaining space in details column
+                                minHeight: '100px',
+                                padding: '0.75rem',
+                                backgroundColor: 'var(--bg-tertiary)',
+                                border: '2px solid var(--border-color)',
+                                borderRadius: 'var(--radius-md)',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.9375rem',
+                                resize: 'none',
+                            }}
+                            spellCheck={false}
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: '1rem' }}>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: '0.875rem',
+                                color: 'var(--text-secondary)',
+                                marginBottom: '0.5rem',
+                            }}
+                        >
+                            Tags
+                        </label>
+                        <div className="import-tags-input-container" onClick={() => document.getElementById('import-tag-input')?.focus()}>
+                            {tags.map((tag, index) => (
+                                <span key={index} className="import-tag-pill">
+                                    {tag}
+                                    <button onClick={(e) => { e.stopPropagation(); removeTag(tag); }}>
+                                        <X size={12} />
+                                    </button>
+                                </span>
+                            ))}
+                            <input
+                                id="import-tag-input"
+                                type="text"
+                                value={tagInput}
+                                onChange={(e) => setTagInput(e.target.value)}
+                                onKeyDown={handleTagKeyDown}
+                                placeholder={tags.length === 0 ? "Type and press Enter..." : ""}
+                                className="import-tag-input-field"
+                                spellCheck={false}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="import-actions">
+            <div className="import-actions" style={{ justifyContent: 'space-between' }}>
                 <button
                     className="import-button import-button-secondary"
-                    onClick={handleSave}
-                    disabled={isSaving || !promptTitle.trim()}
+                    onClick={onBack}
+                    disabled={isSaving}
                 >
-                    {isSaving ? 'Saving...' : 'Save to Library'}
+                    <ArrowLeft size={16} />
+                    Back to Editing
                 </button>
-                <button
-                    className="import-button import-button-primary"
-                    onClick={handleGoToBuilder}
-                    disabled={isSaving || !promptTitle.trim()}
-                >
-                    {isSaving ? 'Saving...' : 'Save & Open in Builder'}
-                </button>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button
+                        className="import-button import-button-secondary"
+                        onClick={handleGoToBuilder}
+                        disabled={isSaving || !promptTitle.trim()}
+                    >
+                        <Layers size={16} />
+                        {isSaving ? 'Saving...' : 'Save & Open in Builder'}
+                    </button>
+                    <button
+                        className="import-button import-button-primary"
+                        onClick={handleSave}
+                        disabled={isSaving || !promptTitle.trim()}
+                    >
+                        <Library size={16} />
+                        {isSaving ? 'Saving...' : 'Save to Library'}
+                    </button>
+                </div>
             </div>
         </div>
     );

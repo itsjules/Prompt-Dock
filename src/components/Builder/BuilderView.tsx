@@ -667,6 +667,7 @@ export const BuilderView = () => {
                                                 placeholder={`Search ${selectedCategory}s...`}
                                                 value={pickerSearch}
                                                 onChange={(e) => setPickerSearch(e.target.value)}
+                                                spellCheck={false}
                                             />
                                         </div>
                                         <button

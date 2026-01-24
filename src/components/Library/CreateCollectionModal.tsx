@@ -50,6 +50,7 @@ export const CreateCollectionModal = ({ onClose, onCreated }: CreateCollectionMo
                             placeholder="e.g., Creative Writing, Technical Prompts..."
                             autoFocus
                             required
+                            spellCheck={false}
                         />
                     </div>
 
@@ -61,6 +62,7 @@ export const CreateCollectionModal = ({ onClose, onCreated }: CreateCollectionMo
                             onChange={e => setDescription(e.target.value)}
                             placeholder="What is this collection for?"
                             rows={3}
+                            spellCheck={false}
                         />
                     </div>
 

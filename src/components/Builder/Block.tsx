@@ -2,6 +2,7 @@ import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, Save, Star, Chevron
 import { Draggable } from '@hello-pangea/dnd';
 import { useEffect, useRef, useState } from 'react';
 import type { Block, BlockType } from '../../schemas/block.schema';
+import { BLOCK_COLORS, BLOCK_ACCENTS, darkenColor } from '../../constants/blockStyles';
 import './Block.css';
 
 interface BlockProps {
@@ -32,56 +33,9 @@ interface BlockProps {
     isDirty?: boolean;
     isCompact?: boolean; // New: Compact mode for picker
 }
-//----Old Colors--------
-// const BLOCK_COLORS: Record<BlockType, string> = {
-//     Role: '#264868ff',        // Rich Ocean (Teal)
-//     Task: '#49375fff',        // Rich Indigo (Was Aubergine)
-//     Context: '#85621eff',     // Rich Mustard (Bronze)
-//     Output: '#3b6646ff',      // Rich Sage (Forest)
-//     Style: '#7e2a58ff',       // Rich Raspberry (Was Lavender)
-//     Constraints: '#7D3535', // Rich Rosewood (Terra Cotta)
-// };
 
-const BLOCK_COLORS: Record<BlockType, string> = {
-    Role: '#214357ff',        // Rich Ocean (Teal)
-    Task: '#49375fff',        // Rich Indigo (Was Aubergine)
-    Context: '#64480eff',     // Rich Mustard (Bronze)
-    Output: '#2f4933ff',      // Rich Sage (Forest)
-    Style: '#662b4fff',       // Rich Raspberry (Was Lavender)
-    Constraints: '#6e2f2fff', // Rich Rosewood (Terra Cotta)
-};
 
-// Accent colors: Keep these vibrant for the "pop" (borders)
-// Accent colors: Normalized high-brightness for consistent visibility against dark rich backgrounds
-const BLOCK_ACCENTS: Record<BlockType, string> = {
-    Role: '#80DEEA',        // Bright Cyan
-    Task: '#9FA8DA',        // Bright Indigo/Periwinkle
-    Context: '#FFE082',     // Bright Amber
-    Output: '#C5E1A5',      // Bright Light Green
-    Style: '#F48FB1',       // Bright Pink
-    Constraints: '#EF9A9A', // Bright Red
-};
 
-// Helper: Darken slightly for rich background (0.6 multiplier)
-const darkenColor = (hex: string): string => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-
-    const dark = (c: number) => Math.floor(c * 0.6);
-
-    return `#${dark(r).toString(16).padStart(2, '0')}${dark(g).toString(16).padStart(2, '0')}${dark(b).toString(16).padStart(2, '0')}`;
-};
-
-// Helper: Boost brightness for accent colors (mix 60% white)
-const lightenColor = (hex: string): string => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-
-    const mix = (c: number) => Math.min(255, Math.floor(c * 0.4 + 255 * 0.6));
-    return `#${mix(r).toString(16).padStart(2, '0')}${mix(g).toString(16).padStart(2, '0')}${mix(b).toString(16).padStart(2, '0')}`;
-};
 
 export const BlockComponent = ({
     block,

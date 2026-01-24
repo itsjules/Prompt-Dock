@@ -21,6 +21,28 @@ function registerIPCHandlers() {
         }
     });
 
+    ipcMain.handle('read-file', async (_, filePath) => {
+        try {
+            // Basic validation
+            const ext = path.extname(filePath).toLowerCase();
+            if (!['.txt', '.md'].includes(ext)) {
+                throw new Error('Unsupported file extension');
+            }
+
+            // Check file size (5MB limit)
+            const stats = await fs.stat(filePath);
+            if (stats.size > 5 * 1024 * 1024) {
+                throw new Error('File size exceeds 5MB limit');
+            }
+
+            const content = await fs.readFile(filePath, 'utf-8');
+            return content;
+        } catch (error) {
+            console.error('Error reading file:', error);
+            throw error;
+        }
+    });
+
     ipcMain.handle('save-storage', async (_, data) => {
         try {
             const filePath = getStoragePath();

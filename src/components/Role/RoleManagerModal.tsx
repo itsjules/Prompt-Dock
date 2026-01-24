@@ -165,6 +165,7 @@ export const RoleManagerModal = ({ onClose }: RoleManagerModalProps) => {
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="e.g. Creative Writer"
                                     autoFocus
+                                    spellCheck={false}
                                 />
                             </div>
                             <div className="form-group">
@@ -173,6 +174,7 @@ export const RoleManagerModal = ({ onClose }: RoleManagerModalProps) => {
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                                     placeholder="Short purpose description"
+                                    spellCheck={false}
                                 />
                             </div>
                             <div className="form-group">
@@ -182,6 +184,7 @@ export const RoleManagerModal = ({ onClose }: RoleManagerModalProps) => {
                                     onChange={e => setKeywordInput(e.target.value)}
                                     onKeyDown={handleAddKeyword}
                                     placeholder="Add keywords to prioritize content..."
+                                    spellCheck={false}
                                 />
                                 <div className="keyword-chips">
                                     {formData.keywords?.map(kw => (

@@ -114,6 +114,7 @@ export const SaveMetadataModal: React.FC<SaveMetadataModalProps> = ({
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="e.g. React Code Refactor"
                             autoFocus
+                            spellCheck={false}
                         />
                     </div>
 
@@ -124,6 +125,7 @@ export const SaveMetadataModal: React.FC<SaveMetadataModalProps> = ({
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="What does this prompt do?"
                             rows={3}
+                            spellCheck={false}
                         />
                     </div>
 
@@ -146,6 +148,7 @@ export const SaveMetadataModal: React.FC<SaveMetadataModalProps> = ({
                                 onKeyDown={handleTagKeyDown}
                                 placeholder={tags.length === 0 ? "Type and press Enter..." : ""}
                                 className="tag-input-field"
+                                spellCheck={false}
                             />
                         </div>
                         <span className="help-text">Press Enter to add a tag</span>

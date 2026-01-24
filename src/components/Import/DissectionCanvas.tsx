@@ -156,7 +156,18 @@ export const DissectionCanvas: React.FC = () => {
                                 <textarea
                                     className="dissection-block-content"
                                     value={block.content}
-                                    onChange={(e) => handleContentChange(block.id, e.target.value)}
+                                    onChange={(e) => {
+                                        handleContentChange(block.id, e.target.value);
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = `${e.target.scrollHeight}px`;
+                                    }}
+                                    ref={(el) => {
+                                        if (el) {
+                                            el.style.height = 'auto'; // Reset to recalculate
+                                            el.style.height = `${el.scrollHeight}px`;
+                                        }
+                                    }}
+                                    spellCheck={false}
                                 />
                             </div>
 

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { BlockType } from '../../schemas/block.schema';
+import { BLOCK_COLORS, BLOCK_ACCENTS } from '../../constants/blockStyles';
 import './Import.css';
 
 interface BlockTypeSelectorProps {
@@ -8,13 +10,13 @@ interface BlockTypeSelectorProps {
     suggestedType?: string;
 }
 
-const BLOCK_TYPES = [
-    { value: 'Role', label: 'Role', icon: '👤' },
-    { value: 'Task', label: 'Task', icon: '🎯' },
-    { value: 'Context', label: 'Context', icon: '📋' },
-    { value: 'Output', label: 'Output', icon: '📤' },
-    { value: 'Style', label: 'Style', icon: '🎨' },
-    { value: 'Constraints', label: 'Constraints', icon: '⚠️' },
+const BLOCK_TYPES: { value: BlockType; label: string }[] = [
+    { value: 'Role', label: 'Role' },
+    { value: 'Task', label: 'Task' },
+    { value: 'Context', label: 'Context' },
+    { value: 'Output', label: 'Output' },
+    { value: 'Style', label: 'Style' },
+    { value: 'Constraints', label: 'Constraints' },
 ];
 
 export const BlockTypeSelector: React.FC<BlockTypeSelectorProps> = ({
@@ -48,17 +50,30 @@ export const BlockTypeSelector: React.FC<BlockTypeSelectorProps> = ({
         setIsOpen(false);
     };
 
+    const getBlockColor = (type: string) => {
+        return BLOCK_COLORS[type as BlockType] || '#2c2e33';
+    };
+
+    const getAccentColor = (type: string) => {
+        return BLOCK_ACCENTS[type as BlockType] || '#9065B0';
+    };
+
     return (
         <div className="block-type-selector" ref={dropdownRef}>
             <button
                 className="block-type-selector-button"
                 onClick={() => setIsOpen(!isOpen)}
                 type="button"
+                style={{
+                    backgroundColor: getBlockColor(value),
+                    borderColor: getAccentColor(value),
+                    borderLeftWidth: '4px',
+                }}
             >
-                <span>
-                    {selectedType?.icon} {selectedType?.label}
+                <span style={{ color: '#EAE0D5', fontWeight: 600 }}>
+                    {selectedType?.label}
                 </span>
-                <ChevronDown size={16} />
+                <ChevronDown size={16} color="#EAE0D5" />
             </button>
 
             {isOpen && (
@@ -68,11 +83,21 @@ export const BlockTypeSelector: React.FC<BlockTypeSelectorProps> = ({
                             key={type.value}
                             className={`block-type-option ${value === type.value ? 'selected' : ''}`}
                             onClick={() => handleSelect(type.value)}
+                            style={{
+                                backgroundColor: getBlockColor(type.value),
+                                borderLeft: `4px solid ${getAccentColor(type.value)}`,
+                                borderRight: 'none',
+                                borderTop: 'none',
+                                borderBottom: 'none', // Remove CSS border
+                                borderRadius: '4px',
+                                margin: '2px 0', // Vertical margin only
+                                padding: '0.35rem 0.75rem', // Slightly thinner padding
+                                fontSize: '0.8rem', // Smaller text
+                            }}
                         >
-                            <span>{type.icon}</span>
-                            <span className="block-type-option-label">{type.label}</span>
+                            <span className="block-type-option-label" style={{ color: '#EAE0D5' }}>{type.label}</span>
                             {suggestedType === type.value && (
-                                <span style={{ fontSize: '0.75rem', color: 'var(--accent-success)' }}>
+                                <span style={{ fontSize: '0.65rem', color: '#8fce00', fontWeight: 'bold', backgroundColor: 'rgba(0,0,0,0.3)', padding: '1px 5px', borderRadius: '3px' }}>
                                     Suggested
                                 </span>
                             )}

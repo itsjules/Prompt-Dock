@@ -191,6 +191,7 @@ export const HomeView = () => {
                             onFocus={() => setIsSearchFocused(true)}
                             onKeyDown={handleKeyDown}
                             autoFocus
+                            spellCheck={false}
                         />
                     </div>
                     {isSearchFocused && (

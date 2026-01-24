@@ -12,8 +12,10 @@ const BLOCK_PATTERNS = {
             /^#+\s*Persona\s*:?/im,
             /^Persona\s*:?/im,
             /^#+\s*Character\s*:?/im,
+            /^#+\s*Actor\s*:?/im,  // Added as requested
+            /^Actor\s*:?/im,       // Added as requested
         ],
-        keywords: ['expert', 'assistant', 'persona', 'character', 'specialist', 'professional'],
+        keywords: ['expert', 'assistant', 'persona', 'character', 'specialist', 'professional', 'actor'],
         patterns: [
             /^(you are|act as|imagine you are|as an?)\s+/im,
             /^(your role is|you will be)\s+/im,
