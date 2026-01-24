@@ -34,47 +34,44 @@ interface BlockProps {
 }
 
 const BLOCK_COLORS: Record<BlockType, string> = {
-    Role: '#1e3a5f',        // Dark Blue
-    Task: '#4a2c5a',        // Dark Purple
-    Context: '#5d3a1a',     // Dark Orange/Brown
-    Output: '#1b4d3e',      // Dark Green
-    Style: '#5a2e2e',       // Dark Red/Brown
-    Constraints: '#5a1e1e', // Dark Red
+    Role: '#2A5252',        // Rich Ocean (Teal)
+    Task: '#39395f',        // Rich Indigo (Was Aubergine)
+    Context: '#755C2B',     // Rich Mustard (Bronze)
+    Output: '#406352',      // Rich Sage (Forest)
+    Style: '#663344',       // Rich Raspberry (Was Lavender)
+    Constraints: '#7D3535', // Rich Rosewood (Terra Cotta)
 };
 
-// Accent colors for borders/text to make them pop against the dark backgrounds
+// Accent colors: Keep these vibrant for the "pop" (borders)
+// Accent colors: Normalized high-brightness for consistent visibility against dark rich backgrounds
 const BLOCK_ACCENTS: Record<BlockType, string> = {
-    Role: '#90caf9',
-    Task: '#e1bee7',
-    Context: '#ffcc80',
-    Output: '#a5d6a7',
-    Style: '#ffab91',
-    Constraints: '#ef9a9a',
+    Role: '#80DEEA',        // Bright Cyan
+    Task: '#9FA8DA',        // Bright Indigo/Periwinkle
+    Context: '#FFE082',     // Bright Amber
+    Output: '#C5E1A5',      // Bright Light Green
+    Style: '#F48FB1',       // Bright Pink
+    Constraints: '#EF9A9A', // Bright Red
 };
 
-// Helper functions to create dark background and light accent from a base color
+// Helper: Darken slightly for rich background (0.6 multiplier)
 const darkenColor = (hex: string): string => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
 
-    const darkR = Math.floor(r * 0.25);
-    const darkG = Math.floor(g * 0.25);
-    const darkB = Math.floor(b * 0.25);
+    const dark = (c: number) => Math.floor(c * 0.6);
 
-    return `#${darkR.toString(16).padStart(2, '0')}${darkG.toString(16).padStart(2, '0')}${darkB.toString(16).padStart(2, '0')}`;
+    return `#${dark(r).toString(16).padStart(2, '0')}${dark(g).toString(16).padStart(2, '0')}${dark(b).toString(16).padStart(2, '0')}`;
 };
 
+// Helper: Boost brightness for accent colors (mix 60% white)
 const lightenColor = (hex: string): string => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
 
-    const lightR = Math.floor(r + (255 - r) * 0.5);
-    const lightG = Math.floor(g + (255 - g) * 0.5);
-    const lightB = Math.floor(b + (255 - b) * 0.5);
-
-    return `#${lightR.toString(16).padStart(2, '0')}${lightG.toString(16).padStart(2, '0')}${lightB.toString(16).padStart(2, '0')}`;
+    const mix = (c: number) => Math.min(255, Math.floor(c * 0.4 + 255 * 0.6));
+    return `#${mix(r).toString(16).padStart(2, '0')}${mix(g).toString(16).padStart(2, '0')}${mix(b).toString(16).padStart(2, '0')}`;
 };
 
 export const BlockComponent = ({
@@ -131,12 +128,17 @@ export const BlockComponent = ({
         }
     }, [block.content, draftContent, autoExpandTextarea, isCollapsed]);
 
-    // Determine colors: use custom category color if provided, otherwise use default
+    // Determine colors: Use rich darken logic
     const blockColor = categoryColor ? darkenColor(categoryColor) : BLOCK_COLORS[block.type as BlockType] || '#2c2e33';
-    const accentColor = categoryColor ? lightenColor(categoryColor) : BLOCK_ACCENTS[block.type as BlockType] || '#9065B0';
+    // Use the raw accent color for borders
+    const accentColor = categoryColor || BLOCK_ACCENTS[block.type as BlockType] || '#9065B0';
 
+    // For pastel backgrounds, force dark text
     const displayContent = draftContent !== undefined ? draftContent : block.content;
     const displayLabel = draftLabel !== undefined ? draftLabel : block.label;
+
+    // Uniform off-white for text/icons to match Prompt Card title (Warm Bone)
+    const headerContentColor = '#EAE0D5';
 
     const renderContent = (dragProps: any = {}, dragHandleProps: any = {}, isDragging: boolean = false, innerRef: any = null) => (
         <div
@@ -152,17 +154,17 @@ export const BlockComponent = ({
             <div className="block-header" style={{ backgroundColor: blockColor, cursor: isCompact ? 'pointer' : 'default' }}>
                 {!hideDragHandle && isDraggable && (
                     <div className="block-drag-handle" {...dragHandleProps}>
-                        <GripVertical size={14} color={accentColor} />
+                        <GripVertical size={14} color={headerContentColor} />
                     </div>
                 )}
                 {/* Expand Indicator for Compact Mode */}
                 {isCompact && (
-                    <div style={{ marginRight: '6px', color: accentColor, display: 'flex', alignItems: 'center' }}>
+                    <div style={{ marginRight: '6px', color: headerContentColor, display: 'flex', alignItems: 'center' }}>
                         {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                     </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-                    <span className="block-type" style={{ color: accentColor, fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
+                    <span className="block-type" style={{ color: headerContentColor, fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.8 }}>
                         {block.type.toUpperCase()}
                     </span>
                     {/* Favorite Button (Inline next to type or absolute top right?) - Inline is tight. Let's put it in actions or absolute. 
@@ -174,11 +176,11 @@ export const BlockComponent = ({
                             onChange={(e) => onLabelUpdate(block.id, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             className="block-label-input"
-                            style={{ color: accentColor }}
+                            style={{ color: headerContentColor }}
                             spellCheck={false}
                         />
                     ) : (
-                        <span className="block-label" style={{ color: accentColor, fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <span className="block-label" style={{ color: headerContentColor, fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {displayLabel || 'Untitled Block'}
                         </span>
                     )}
@@ -189,7 +191,7 @@ export const BlockComponent = ({
                             className={`block-favorite-btn ${block.isFavorite ? 'active' : ''}`}
                             onClick={(e) => { e.stopPropagation(); onToggleFavorite(block.id); }}
                             title={block.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-                            style={{ color: block.isFavorite ? '#ffb400' : accentColor, background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex' }}
+                            style={{ color: block.isFavorite ? '#ffb400' : headerContentColor, background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex' }}
                         >
                             <Star size={14} fill={block.isFavorite ? "currentColor" : "none"} />
                         </button>
@@ -209,7 +211,7 @@ export const BlockComponent = ({
                             className="block-add-btn"
                             onClick={(e) => { e.stopPropagation(); onAdd(block.id); }}
                             title="Add to canvas"
-                            style={{ color: accentColor }}
+                            style={{ color: headerContentColor }}
                         >
                             <Plus size={16} />
                         </button>
@@ -219,7 +221,7 @@ export const BlockComponent = ({
                             className="block-delete-btn"
                             onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
                             title="Remove block"
-                            style={{ color: accentColor }}
+                            style={{ color: headerContentColor }}
                         >
                             <Trash2 size={14} />
                         </button>
@@ -251,7 +253,7 @@ export const BlockComponent = ({
                                 className="corner-action-btn"
                                 onClick={() => onMove(block.id, 'up')}
                                 title="Move Up"
-                                style={{ color: accentColor }}
+                                style={{ color: headerContentColor }}
                             >
                                 <ChevronUp size={16} />
                             </button>
@@ -259,7 +261,7 @@ export const BlockComponent = ({
                                 className="corner-action-btn"
                                 onClick={() => onMove(block.id, 'down')}
                                 title="Move Down"
-                                style={{ color: accentColor }}
+                                style={{ color: headerContentColor }}
                             >
                                 <ChevronDown size={16} />
                             </button>

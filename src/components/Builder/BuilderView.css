@@ -10,12 +10,12 @@
 
 /* Common Pane Reset */
 .pane-header {
-    height: 60px;
+    height: 70px;
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 0 1.5rem;
-    border-bottom: 2px solid var(--bg-tertiary);
+    padding: 0 1rem;
+    border-bottom: 1px solid var(--bg-tertiary);
     background-color: transparent;
     flex-shrink: 0;
 }
@@ -29,26 +29,52 @@
     letter-spacing: 1px;
     color: var(--text-secondary);
     flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    /* Enable flex compression */
+    padding-right: 0.5rem;
+    /* Add spacing between title and actions */
 }
 
 /* --- TOOLBOX (Categories + Picker merged visually) --- */
 .pane-categories {
-    width: 60px;
-    /* Slim rail */
+    width: 80px;
+    /* Slim rail - matched to Dock */
     background: var(--bg-secondary);
     border: none;
-    border-radius: 30px;
+    border-radius: 40px;
+    /* Matched to Dock */
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1rem 0;
+    padding: 0 0 1rem 0;
     box-shadow: var(--shadow-soft);
     z-index: 20;
+    overflow: hidden;
+}
+
+.pane-categories-footer {
+    margin-top: auto;
+    /* Push to bottom */
+    padding-bottom: 0.5rem;
+}
+
+.pane-categories .pane-header {
+    justify-content: center;
+    padding: 0;
+    border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.pane-categories .pane-header h3 {
+    display: none;
+    /* Hide title in narrow rail */
 }
 
 .category-tab {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -95,17 +121,43 @@
 }
 
 .picker-search {
-    background: var(--bg-tertiary);
-    padding: 0.5rem 1rem;
-    border-radius: 12px;
-    margin: 0 0 0 auto;
-    border: 1px solid transparent;
+    background: var(--bg-primary);
+    /* Darker than panel */
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    /* Pill shape */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    border: 1px solid var(--border-color);
+    width: 100px;
+    /* Constrain width */
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.picker-search input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    width: 100%;
+    font-size: 0.8rem;
+    font-family: var(--font-body);
+    outline: none;
+    padding: 0;
+}
+
+.picker-search input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
 }
 
 .picker-search:focus-within {
     background: var(--bg-primary);
-    border-color: var(--accent-secondary);
-    box-shadow: 0 0 0 2px rgba(var(--accent-secondary), 0.1);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(var(--accent-primary-rgb), 0.1);
+    width: 160px;
+    /* Expand on focus */
 }
 
 .picker-content {
@@ -146,6 +198,9 @@
     border: 2px dashed var(--border-color);
     background: transparent;
     box-shadow: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
 }
 
 .picker-card.create-new:hover {
@@ -207,16 +262,23 @@
 }
 
 .canvas-empty-state {
-    height: 100%;
+    flex: 1;
+    /* Use flex grow instead of fixed height */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    /* Ensure text is centered */
     color: var(--text-secondary);
     border: 2px dashed var(--border-color);
     border-radius: var(--radius-lg);
-    margin: 2rem;
+    margin: 0.8rem;
     background: rgba(255, 255, 255, 0.02);
+    min-height: 430px;
+    /* Ensure it has some size but not huge */
+    overflow: hidden;
+    /* Prevent overflow */
 }
 
 /* Footer Actions */
@@ -245,6 +307,18 @@
     cursor: pointer;
     border: none;
     transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.footer-btn.secondary {
+    background-color: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.footer-btn.secondary:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
 }
 
 .footer-btn.primary {
@@ -314,19 +388,17 @@
 .add-category-ghost-btn {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    width: 100%;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
     background: transparent;
     border: none;
     cursor: pointer;
     color: var(--text-secondary);
-    font-size: 0.85rem;
-    padding: 0.8rem;
-    border-radius: 6px;
-    opacity: 0.7;
+    padding: 0;
     transition: all 0.2s;
-    justify-content: center;
-    border: 1px dashed transparent;
+    border: 1px dashed var(--border-color);
 }
 
 .add-category-ghost-btn:hover {
@@ -354,12 +426,99 @@
 }
 
 /* Modal and Toasts kept similar but updated with vars */
+.category-creation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
 .preview-modal-content,
 .category-creation-toast {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    width: 400px;
+    /* Specific width for toast/modal */
+    max-width: 90vw;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.toast-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.toast-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.toast-header button {
+    background: transparent;
     border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+}
+
+.toast-header button:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group textarea {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    outline: none;
+    transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(var(--accent-primary-rgb), 0.1);
+}
+
+.toast-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
 }
 
 .full-prompt-text {
@@ -369,6 +528,27 @@
     padding: 2rem;
 }
 
+
+/* Color Picker */
+.color-picker-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.25rem 0;
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    padding: 0;
+}
 
 .color-swatch:hover {
     transform: scale(1.15);

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, ChevronRight, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2, PanelLeftClose, PanelLeftOpen, Star } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
@@ -97,16 +98,20 @@ const getCategoryTemplate = (type: string) => {
 };
 
 // Notion-inspired color palette (lighter, more vibrant)
+// Theme-aligned palette (Earthy Bauhaus / Vibrant Teal)
 const CATEGORY_COLORS = [
-    { name: 'Gray', value: '#787774' },
-    { name: 'Brown', value: '#9F6B53' },
-    { name: 'Orange', value: '#D9730D' },
-    { name: 'Yellow', value: '#DFAB01' },
-    { name: 'Green', value: '#0F7B6C' },
-    { name: 'Blue', value: '#0B6E99' },
-    { name: 'Purple', value: '#6940A5' },
-    { name: 'Pink', value: '#AD1A72' },
-    { name: 'Red', value: '#E03E3E' },
+    { name: 'Cobalt', value: '#3D5AFE' },     // Vibrant Blue
+    { name: 'Tangerine', value: '#FF6D00' },  // Vibrant Orange
+    { name: 'Magenta', value: '#D500F9' },    // Vibrant Pink/Purple
+    { name: 'Lime', value: '#76FF03' },       // Electric Green
+    { name: 'Crimson', value: '#FF1744' },    // Bright Red
+    { name: 'Turquoise', value: '#00E5FF' },  // Bright Cyan (Distinct from Teal)
+    { name: 'Violet', value: '#651FFF' },     // Deep Violet
+    { name: 'Gold', value: '#FFD600' },       // Bright Yellow/Gold
+    { name: 'Slate', value: '#607D8B' },      // Cool Grey (Neutral option)
+    { name: 'Coral', value: '#FF4081' },      // Pinkish Red
+    { name: 'Mint', value: '#1DE9B6' },       // Vibrant Mint
+    { name: 'Azure', value: '#00B0FF' }       // Sky Blue
 ];
 
 export const BuilderView = () => {
@@ -635,9 +640,9 @@ export const BuilderView = () => {
                                     <button
                                         className="add-category-ghost-btn"
                                         onClick={() => setIsCreatingCategory(true)}
+                                        title="Add New Category"
                                     >
-                                        <Plus size={14} />
-                                        <span>Add Category</span>
+                                        <Plus size={16} />
                                     </button>
                                 </div>
                             </div>
@@ -646,7 +651,7 @@ export const BuilderView = () => {
                             {/* PANE 2: BLOCK PICKER / BROWSER */}
                             <div className="pane-picker">
                                 <div className="pane-header">
-                                    <h3>{selectedCategory}s</h3>
+                                    <h3>{selectedCategory.endsWith('s') ? selectedCategory : `${selectedCategory}s`}</h3>
                                     <div className="picker-header-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                         <button
                                             className={`icon-btn-ghost ${filterFavorites ? 'active' : ''}`}
@@ -891,7 +896,8 @@ export const BuilderView = () => {
             />
 
             {/* BLOCK SAVE RESOLUTION MODAL */}
-            {blockSaveCandidate && (
+            {/* BLOCK SAVE RESOLUTION MODAL */}
+            {blockSaveCandidate && createPortal(
                 <div className="category-creation-overlay">
                     <div className="category-creation-toast" style={{ maxWidth: '400px' }}>
                         <div className="toast-header">
@@ -915,11 +921,12 @@ export const BuilderView = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
             {/* CATEGORY CREATION MODAL/TOAST */}
             {
-                isCreatingCategory && (
+                isCreatingCategory && createPortal(
                     <div className="category-creation-overlay">
                         <div className="category-creation-toast">
                             <div className="toast-header">
@@ -971,16 +978,17 @@ export const BuilderView = () => {
                             </div>
 
                             <div className="toast-actions">
-                                <button className="secondary" onClick={() => handleCreateCategory(true)}>Additional block</button>
-                                <button className="primary" onClick={() => handleCreateCategory(false)}>Create Category</button>
+                                <button className="footer-btn secondary" onClick={() => handleCreateCategory(true)}>Additional block</button>
+                                <button className="footer-btn primary" onClick={() => handleCreateCategory(false)}>Create Category</button>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )
             }
             {/* EDIT CATEGORY DIALOG */}
             {
-                isEditingCategory && (
+                isEditingCategory && createPortal(
                     <div className="category-creation-overlay">
                         <div className="category-creation-toast">
                             <div className="toast-header">
@@ -1036,12 +1044,13 @@ export const BuilderView = () => {
                                 <button className="primary" onClick={handleSaveEditCategory}>Save Changes</button>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
                 )
             }
 
             {/* BLOCK CREATION TOAST */}
-            {isCreatingBlock && (
+            {isCreatingBlock && createPortal(
                 <div className="category-creation-overlay">
                     <div className="category-creation-toast">
                         <div className="toast-header">
@@ -1082,7 +1091,8 @@ export const BuilderView = () => {
                             <button className="primary" onClick={handleSaveNewBlock}>Create Block</button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );

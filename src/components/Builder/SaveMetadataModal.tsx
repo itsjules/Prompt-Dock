@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useBuilderStore } from '../../stores/useBuilderStore';
 import './SaveMetadataModal.css';
@@ -97,7 +97,7 @@ export const SaveMetadataModal: React.FC<SaveMetadataModalProps> = ({
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="metadata-modal-overlay">
             <div className="metadata-modal">
                 <div className="modal-header">
@@ -163,6 +163,7 @@ export const SaveMetadataModal: React.FC<SaveMetadataModalProps> = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
