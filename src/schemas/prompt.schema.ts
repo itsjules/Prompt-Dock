@@ -15,6 +15,8 @@ export const PromptSchema = z.object({
     rating: z.number().min(0).max(5).optional(),
     usageCount: z.number().int().min(0).default(0),
     isFavorite: z.boolean().default(false),
+    importedFrom: z.string().optional(), // Source filename or "pasted text"
+    importedAt: z.string().datetime().optional(), // When it was imported
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
 });

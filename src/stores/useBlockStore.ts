@@ -2,6 +2,51 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import type { Block, BlockType } from '../schemas/block.schema';
 
+/**
+ * Calculate similarity between two strings using Levenshtein distance
+ * Returns a value between 0 (completely different) and 1 (identical)
+ */
+function calculateSimilarity(str1: string, str2: string): number {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+
+    if (longer.length === 0) return 1.0;
+
+    const editDistance = levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+}
+
+/**
+ * Calculate Levenshtein distance between two strings
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+    const matrix: number[][] = [];
+
+    for (let i = 0; i <= str2.length; i++) {
+        matrix[i] = [i];
+    }
+
+    for (let j = 0; j <= str1.length; j++) {
+        matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= str2.length; i++) {
+        for (let j = 1; j <= str1.length; j++) {
+            if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j] + 1
+                );
+            }
+        }
+    }
+
+    return matrix[str2.length][str1.length];
+}
+
 interface BlockStore {
     blocks: Record<string, Block>;
     addBlock: (block: Omit<Block, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>) => string;
@@ -14,6 +59,9 @@ interface BlockStore {
     getBlocksByType: (type: BlockType) => Block[];
     getFavoriteBlocks: () => Block[];
     setBlocks: (blocks: Record<string, Block>) => void;
+    // Import functionality
+    importBlocks: (blocks: Omit<Block, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>[]) => string[];
+    checkDuplicates: (content: string) => Block | null;
     // Custom Categories
     customCategories: { name: string; description: string; color: string }[];
     addCategory: (category: { name: string; description: string; color: string }) => void;
@@ -103,6 +151,51 @@ export const useBlockStore = create<BlockStore>((set, get) => ({
         Object.values(get().blocks).filter((block) => block.type === type),
 
     setBlocks: (blocks) => set({ blocks }),
+
+    importBlocks: (blocks) => {
+        const ids: string[] = [];
+        const now = new Date().toISOString();
+        const newBlocks: Record<string, Block> = {};
+
+        blocks.forEach((block) => {
+            const id = uuidv4();
+            ids.push(id);
+            newBlocks[id] = {
+                ...block,
+                id,
+                createdAt: now,
+                updatedAt: now,
+                usageCount: 0,
+            };
+        });
+
+        set((state) => ({
+            blocks: { ...state.blocks, ...newBlocks },
+        }));
+
+        return ids;
+    },
+
+    checkDuplicates: (content) => {
+        const normalizedContent = content.trim().toLowerCase();
+        const allBlocks = Object.values(get().blocks);
+
+        // Find exact match first
+        const exactMatch = allBlocks.find(
+            (block) => block.content.trim().toLowerCase() === normalizedContent
+        );
+
+        if (exactMatch) return exactMatch;
+
+        // Find similar match (90% similarity threshold)
+        const similarMatch = allBlocks.find((block) => {
+            const blockContent = block.content.trim().toLowerCase();
+            const similarity = calculateSimilarity(normalizedContent, blockContent);
+            return similarity > 0.9;
+        });
+
+        return similarMatch || null;
+    },
 
     addCategory: (category) =>
         set((state) => ({

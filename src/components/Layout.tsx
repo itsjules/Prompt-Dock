@@ -1,5 +1,5 @@
 import { useUIStore } from '../stores/useUIStore';
-import { Layers, Library, Settings, Home } from 'lucide-react';
+import { Layers, Library, Settings, Home, Upload } from 'lucide-react';
 import './Layout.css';
 import logo from '../assets/logo.png';
 
@@ -46,6 +46,13 @@ export const Layout = ({ children }: LayoutProps) => {
                             title="Builder"
                         >
                             <Layers size={20} />
+                        </button>
+                        <button
+                            className={`dock-item ${activeView === 'import' ? 'active' : ''}`}
+                            onClick={() => setActiveView('import')}
+                            title="Import"
+                        >
+                            <Upload size={20} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'settings' ? 'active' : ''}`}

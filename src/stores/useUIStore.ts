@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export type LibraryTab = 'all' | 'favorites' | 'recents' | 'collections';
 
-type View = 'home' | 'builder' | 'library' | 'settings';
+type View = 'home' | 'builder' | 'library' | 'import' | 'settings';
 
 interface UIStore {
     isOverlayOpen: boolean;

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Fuse from 'fuse.js';
-import { Star, Clock, Grid, Tag, FolderPlus, Plus, Copy, Trash2, Filter, X, CheckSquare, ChevronDown, Repeat, ArrowUpDown } from 'lucide-react';
+import { Star, Clock, Grid, Tag, FolderPlus, Plus, Copy, Trash2, Filter, X, CheckSquare, ChevronDown, Repeat, ArrowUpDown, Upload } from 'lucide-react';
 import { usePromptStore } from '../../stores/usePromptStore';
 import { useCollectionStore } from '../../stores/useCollectionStore';
 import { useBlockStore } from '../../stores/useBlockStore';
@@ -297,6 +297,23 @@ export const LibraryView = () => {
                 <div style={{ flex: 1 }}>
                     <SearchBar />
                 </div>
+                {/* Import Prompt Button */}
+                <button
+                    className="btn-primary"
+                    onClick={() => setActiveView('import')}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.625rem 1rem',
+                        fontSize: '0.875rem',
+                        flexShrink: 0,
+                    }}
+                    title="Import a prompt from text or file"
+                >
+                    <Upload size={16} />
+                    Import Prompt
+                </button>
                 {/* Role Selector (Inline) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Prioritizing:</span>

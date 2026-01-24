@@ -342,7 +342,7 @@ As a user, I want to mark prompts and prompt blocks that worked well so I can ea
 As a learner, I want to easily import full prompts and get them dissected into prompt blocks, so I can understand their structure and reuse the full prompt & its parts modularly.
 
 **Acceptance Criteria**
-- Import Flow: Users can paste raw text or drag-and-drop documents (.txt, .md, .docx, .pdf) into a dedicated import staging area.
+- Import Flow: Users can paste raw text or drag-and-drop documents (.txt, .md, (for later in P2:.docx, .pdf)) into a dedicated import staging area.
 - Automated Dissection:
  - System automatically identifies potential blocks (Role, Task, Context, etc.) based on linguistic patterns and keywords.
  - Support for detecting standard structural markers (e.g., # Role, Constraints:).
