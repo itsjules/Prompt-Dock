@@ -23,7 +23,7 @@ interface SearchSuggestionsProps {
 export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
     const { searchQuery, recentSearches } = useUIStore();
     const { getAllPrompts } = usePromptStore();
-    const { getAllBlocks } = useBlockStore();
+    const { getLibraryBlocks } = useBlockStore();
     const { getAllCollections } = useCollectionStore();
     const activeRoleId = useRoleStore(state => state.activeRoleId);
     const getRelevanceScore = useRoleStore(state => state.getRelevanceScore);
@@ -34,7 +34,7 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
         if (!query) return [];
 
         const prompts = getAllPrompts();
-        const blocks = getAllBlocks();
+        const blocks = getLibraryBlocks();
         const collections = getAllCollections();
 
         // 1. Extract Keywords/Tags (Prioritized)
@@ -68,7 +68,7 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
 
         // Extract from Block labels and content
         blocks.forEach(b => {
-            b.label.split(/[\s-]+/).forEach(w => addMatch(w, false));
+            (b.label || '').split(/[\s-]+/).forEach(w => addMatch(w, false));
             b.content.split(/[\s-]+/).forEach(w => addMatch(w, false));
         });
 
@@ -112,8 +112,8 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
             !results.some(r => r.text.toLowerCase() === p.title.toLowerCase())
         );
         const matchingBlocks = blocks.filter(b =>
-            b.label.toLowerCase().includes(query) &&
-            !results.some(r => r.text.toLowerCase() === b.label.toLowerCase())
+            (b.label || '').toLowerCase().includes(query) &&
+            !results.some(r => r.text.toLowerCase() === (b.label || '').toLowerCase())
         );
 
         // Add Collections
@@ -139,7 +139,7 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
         // Add Blocks
         matchingBlocks.slice(0, 2).forEach(b => {
             results.push({
-                text: b.label,
+                text: b.label || 'Unnamed Block',
                 type: 'block',
                 // id: b.id, 
                 icon: <LayoutGrid size={14} />
@@ -189,7 +189,7 @@ export const SearchSuggestions = ({ onSelect }: SearchSuggestionsProps) => {
         });
 
         return finalResults;
-    }, [query, getAllPrompts, getAllBlocks, getAllCollections, activeRoleId, getRelevanceScore]);
+    }, [query, getAllPrompts, getLibraryBlocks, getAllCollections, activeRoleId, getRelevanceScore]);
 
     if (!query && recentSearches.length === 0) return null;
 

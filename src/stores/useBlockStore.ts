@@ -148,10 +148,10 @@ export const useBlockStore = create<BlockStore>((set, get) => ({
 
     getAllBlocks: () => Object.values(get().blocks),
 
-    getFavoriteBlocks: () => Object.values(get().blocks).filter(b => b.isFavorite),
+    getFavoriteBlocks: () => Object.values(get().blocks).filter(b => b.isFavorite && !b.isFullPrompt),
 
     getBlocksByType: (type) =>
-        Object.values(get().blocks).filter((block) => block.type === type),
+        Object.values(get().blocks).filter((block) => block.type === type && !block.isFullPrompt),
 
     getLibraryBlocks: () =>
         Object.values(get().blocks).filter((block) =>

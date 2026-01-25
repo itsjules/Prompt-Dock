@@ -18,7 +18,7 @@ import './LibraryView.css';
 export const LibraryView = () => {
     const { getAllPrompts, getFavorites: getFavPrompts, getRecents, deletePrompt } = usePromptStore();
     const { getAllCollections } = useCollectionStore();
-    const { getAllBlocks, getFavoriteBlocks: getFavBlocks, deleteBlock, toggleFavorite: toggleBlockFavorite } = useBlockStore();
+    const { getLibraryBlocks, getFavoriteBlocks: getFavBlocks, deleteBlock, toggleFavorite: toggleBlockFavorite } = useBlockStore();
 
     const { searchQuery, setActiveView, libraryTab, setLibraryTab, activeCollectionId, setActiveCollectionId } = useUIStore();
     const { loadPrompt, loadFullPrompt, addBlockId } = useBuilderStore();
@@ -40,7 +40,7 @@ export const LibraryView = () => {
     // Helper to get items based on active tab
     const { promtData, blockData } = useMemo(() => {
         let p = getAllPrompts(); // Show all prompts including full prompts
-        let b = getAllBlocks();
+        let b = getLibraryBlocks();
 
         if (activeTab === 'collections' && activeCollectionId) {
             const collection = collections.find(c => c.id === activeCollectionId);
@@ -55,7 +55,7 @@ export const LibraryView = () => {
         }
 
         return { promtData: p, blockData: b };
-    }, [activeTab, activeCollectionId, collections, getAllPrompts, getAllBlocks, getFavPrompts, getFavBlocks, getRecents]);
+    }, [activeTab, activeCollectionId, collections, getAllPrompts, getLibraryBlocks, getFavPrompts, getFavBlocks, getRecents]);
 
     // Extract all unique tags (Prompts only for now, blocks don't have tags in schema yet)
     const allUniqueTags = useMemo(() => {
