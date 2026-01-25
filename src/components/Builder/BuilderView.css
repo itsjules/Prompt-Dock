@@ -49,7 +49,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 0 1rem 0;
+    align-items: center;
+    padding: 1rem 0;
     box-shadow: var(--shadow-soft);
     z-index: 20;
     overflow: hidden;
@@ -62,14 +63,7 @@
 }
 
 .pane-categories .pane-header {
-    justify-content: center;
-    padding: 0;
-    border-bottom: 1px solid var(--bg-tertiary);
-}
-
-.pane-categories .pane-header h3 {
     display: none;
-    /* Hide title in narrow rail */
 }
 
 .category-tab {

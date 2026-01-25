@@ -2,7 +2,7 @@
 *A Modular Prompt Building Desktop Tool*
 
 **Author:** Julia Podlipensky  
-**PRDVersion:** v1.3 
+**PRDVersion:** v1.4 
 **Reference:** Concept proposal slides + PRD Co-Pilot
 
 ---
