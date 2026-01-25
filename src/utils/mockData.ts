@@ -152,8 +152,8 @@ export const seedMockData = () => {
         blocks: p1_blocks,
         tags: {
             topic: ["Frontend", "React"],
-            style: ["Professional"],
-            technique: ["Chain of Thought"]
+            style: [],
+            technique: []
         }
     });
 
@@ -172,8 +172,8 @@ export const seedMockData = () => {
         blocks: p2_blocks,
         tags: {
             topic: ["Testing", "Accessibility"],
-            style: ["Concise"],
-            technique: ["TDD"]
+            style: [],
+            technique: []
         }
     });
 
@@ -191,7 +191,7 @@ export const seedMockData = () => {
         blocks: p3_blocks,
         tags: {
             topic: ["Design", "Accessibility"],
-            style: ["Educational"],
+            style: [],
             technique: []
         }
     });
@@ -251,7 +251,7 @@ export const seedMockData = () => {
         title: "The Consulting Detective",
         description: "Analyze a situation like Sherlock Holmes.",
         blocks: sherlockBlocks,
-        tags: { style: ['Victorian', 'Analytical'], topic: ['Mystery'], technique: ['Roleplay'] }
+        tags: { style: ['Analytical'], topic: [], technique: ['Character Roleplay'] }
     });
     promptStore.toggleFavorite(sherlockPromptId);
 
@@ -373,7 +373,7 @@ export const seedMockData = () => {
         title: "Unbiased Survey Items",
         description: "Drafts unbiased survey questions measuring success, effort, and trust.",
         blocks: surveyBlocks,
-        tags: { topic: ['Research', 'Survey'], style: ['Neutral'], technique: ['Quantitative'] }
+        tags: { topic: ['Research', 'Survey'], style: [], technique: ['Quantitative'] }
     });
 
     // Prompt 2: Cognitive Interview Simulation
@@ -407,7 +407,7 @@ export const seedMockData = () => {
         title: "Interview Guide Starter",
         description: "Creates a semi-structured interview guide with neutral probing.",
         blocks: guideBlocks,
-        tags: { topic: ['Research', 'Interview'], style: ['Structured'], technique: ['Qualitative'] }
+        tags: { topic: ['Research', 'Interview'], style: [], technique: ['Qualitative'] }
     });
 
     // UX Research Collection
