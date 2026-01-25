@@ -36,4 +36,4 @@ npm run electron:build
 ```
 The installer will be generated in the `release` folder.
 
-### Built for exploration and clarity. Happy prompting!
+### Built by a student for students for exploration and clarity. Happy prompting!
