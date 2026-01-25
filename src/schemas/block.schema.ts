@@ -5,7 +5,7 @@ export const BlockTypeEnum = z.string();
 export const BlockSchema = z.object({
     id: z.string(),
     type: BlockTypeEnum,
-    label: z.string().min(1),
+    label: z.string().optional(), // Optional - unnamed blocks don't have labels
     content: z.string().min(1),
     variables: z.record(z.string()).optional(),
     isFavorite: z.boolean().default(false),

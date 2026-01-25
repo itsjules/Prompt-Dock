@@ -36,19 +36,33 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
         setIsSaving(true);
 
         try {
-            const blockIds = importBlocks(
-                blocks.map((block) => ({
-                    type: block.suggestedType,
-                    label: block.label || `${block.suggestedType} Block`,
-                    content: block.content,
-                    isFavorite: false,
-                }))
-            );
+            // Separate named and unnamed blocks
+            const namedBlocks = blocks.filter(b => b.label && b.label.trim());
+            const unnamedBlocks = blocks.filter(b => !b.label || !b.label.trim());
 
+            // Only import named blocks to library
+            let blockIds: string[] = [];
+            if (namedBlocks.length > 0) {
+                blockIds = importBlocks(
+                    namedBlocks.map((block) => ({
+                        type: block.suggestedType,
+                        label: block.label!,
+                        content: block.content,
+                        isFavorite: false,
+                    }))
+                );
+            }
+
+            // Save prompt with named block IDs and unnamed blocks inline
             addPrompt({
                 title: promptTitle,
                 description: promptDescription,
-                blocks: blockIds,
+                blocks: blockIds, // Only named blocks
+                inlineBlocks: unnamedBlocks.map(block => ({
+                    type: block.suggestedType,
+                    content: block.content,
+                })), // Unnamed blocks stored inline
+                isFullPrompt: false, // This is a dissected prompt, not a full prompt
                 tags: {
                     style: [],
                     topic: tags, // Store all tags in topic for now as per SaveMetadataModal simplicity
@@ -102,27 +116,48 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
                         fontStyle: 'italic',
                         margin: '0 0 1rem 0'
                     }}>
-                        Enter names for the blocks
+                        Enter names for the blocks. Named blocks can be found in the library later.
                     </p>
                     <div className="import-summary-block-list">
-                        {blocks.map((block, index) => (
-                            <div key={block.id} className="import-summary-block-item">
-                                <div className="import-summary-block-type">
-                                    {index + 1}. {block.suggestedType}
+                        {blocks.map((block, index) => {
+                            const hasName = block.label && block.label.trim();
+                            return (
+                                <div key={block.id} className="import-summary-block-item">
+                                    <div className="import-summary-block-type">
+                                        {index + 1}. {block.suggestedType}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        className="import-summary-block-label-input"
+                                        value={block.label || ''}
+                                        onChange={(e) => {
+                                            // Update the block label in the store
+                                            const { updateBlock } = useImportStore.getState();
+                                            updateBlock(block.id, { label: e.target.value });
+                                        }}
+                                        placeholder="Enter block name..."
+                                    />
+                                    <span style={{
+                                        fontSize: '0.75rem',
+                                        color: hasName ? 'var(--accent-success)' : 'var(--text-tertiary)',
+                                        fontWeight: 500,
+                                        whiteSpace: 'nowrap',
+                                    }}>
+                                        {hasName ? '✓ Library' : '○ Prompt only'}
+                                    </span>
                                 </div>
-                                <input
-                                    type="text"
-                                    className="import-summary-block-label-input"
-                                    value={block.label || ''}
-                                    onChange={(e) => {
-                                        // Update the block label in the store
-                                        const { updateBlock } = useImportStore.getState();
-                                        updateBlock(block.id, { label: e.target.value });
-                                    }}
-                                    placeholder="Enter block name..."
-                                />
-                            </div>
-                        ))}
+                            );
+                        })}
+                    </div>
+                    <div style={{
+                        marginTop: '1rem',
+                        padding: '0.75rem',
+                        backgroundColor: 'var(--bg-tertiary)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.875rem',
+                        color: 'var(--text-secondary)',
+                    }}>
+                        Summary: {blocks.filter(b => b.label && b.label.trim()).length} blocks → Library | {blocks.filter(b => !b.label || !b.label.trim()).length} blocks → Prompt only
                     </div>
                 </div>
 

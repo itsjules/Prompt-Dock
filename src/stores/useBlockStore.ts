@@ -58,6 +58,9 @@ interface BlockStore {
     getAllBlocks: () => Block[];
     getBlocksByType: (type: BlockType) => Block[];
     getFavoriteBlocks: () => Block[];
+    // Library filtering
+    getLibraryBlocks: () => Block[]; // Blocks with labels (in library)
+    getUnnamedBlocks: () => Block[]; // Blocks without labels (not in library)
     setBlocks: (blocks: Record<string, Block>) => void;
     // Import functionality
     importBlocks: (blocks: Omit<Block, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>[]) => string[];
@@ -149,6 +152,12 @@ export const useBlockStore = create<BlockStore>((set, get) => ({
 
     getBlocksByType: (type) =>
         Object.values(get().blocks).filter((block) => block.type === type),
+
+    getLibraryBlocks: () =>
+        Object.values(get().blocks).filter((block) => block.label && block.label.trim().length > 0),
+
+    getUnnamedBlocks: () =>
+        Object.values(get().blocks).filter((block) => !block.label || block.label.trim().length === 0),
 
     setBlocks: (blocks) => set({ blocks }),
 
