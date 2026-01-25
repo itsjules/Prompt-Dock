@@ -10,7 +10,8 @@ PromptDock is a local, lightweight desktop tool designed for students and creato
 - **Local & Private:** Your data stays on your machine—no accounts or cloud sync required.
 
 ## Getting Started
-There will be build download links soon (when the last bugs are fixed), for now try over developer mode.
+There will be release build links for Windows & MacOS soon (when the last storage bug is fixed)
+For now try it out over developer mode.
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (latest LTS recommended)
@@ -29,11 +30,4 @@ To start the application in development mode:
 npm run electron:dev
 ```
 
-### Building Locally
-To create a production build and installer for your OS:
-```bash
-npm run electron:build
-```
-The installer will be generated in the `release` folder.
 
-### Built by a student for students for exploration and clarity. Happy prompting!
