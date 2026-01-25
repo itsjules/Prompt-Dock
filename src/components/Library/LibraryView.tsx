@@ -254,7 +254,6 @@ export const LibraryView = () => {
     const handleUsePrompt = (promptId: string) => {
         const prompt = getAllPrompts().find(p => p.id === promptId);
         if (prompt) {
-            usePromptStore.getState().incrementUsage(promptId);
             // Use loadFullPrompt for full prompts, loadPrompt for regular prompts
             if (prompt.isFullPrompt) {
                 loadFullPrompt(prompt);

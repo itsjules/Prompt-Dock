@@ -102,14 +102,7 @@ export const ImportInput: React.FC<ImportInputProps> = ({ onNext, onSkip }) => {
                 <p>Copy and paste a prompt you'd like to dissect into reusable blocks.</p>
                 <textarea
                     className="import-textarea"
-                    placeholder="Paste your prompt here...
-
-Example:
-# Role
-You are an expert Python developer...
-
-# Task
-Create a function that..."
+                    placeholder="Paste your prompt here..."
                     value={textInput}
                     onChange={handleTextChange}
                     disabled={selectedFile !== null}
