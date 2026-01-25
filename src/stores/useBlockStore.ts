@@ -65,6 +65,7 @@ interface BlockStore {
     // Import functionality
     importBlocks: (blocks: Omit<Block, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>[]) => string[];
     checkDuplicates: (content: string) => Block | null;
+    clearAllUnnamedBlocks: () => void;
     // Custom Categories
     customCategories: { name: string; description: string; color: string }[];
     addCategory: (category: { name: string; description: string; color: string }) => void;
@@ -227,4 +228,16 @@ export const useBlockStore = create<BlockStore>((set, get) => ({
         set((state) => ({
             customCategories: state.customCategories.filter((c) => c.name !== name),
         })),
+
+    clearAllUnnamedBlocks: () =>
+        set((state) => {
+            const newBlocks = { ...state.blocks };
+            Object.keys(newBlocks).forEach((key) => {
+                const block = newBlocks[key];
+                if (!block.label || block.label.trim().length === 0) {
+                    delete newBlocks[key];
+                }
+            });
+            return { blocks: newBlocks };
+        }),
 }));

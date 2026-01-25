@@ -15,6 +15,7 @@ interface PromptStore {
     incrementUsage: (id: string) => void;
     toggleFavorite: (id: string) => void;
     setPrompts: (prompts: Record<string, Prompt>) => void;
+    cleanupOrphanedBlocks: () => void; // Purges all unused unnamed blocks
 }
 
 // MOCK DATA for verification
@@ -87,6 +88,61 @@ export const usePromptStore = create<PromptStore>((set, get) => ({
 
     deletePrompt: (id) => {
         set((state) => {
+            const promptToDelete = state.prompts[id];
+            if (!promptToDelete) return state;
+
+            // 1. Identify blocks used by this prompt that might need cleanup
+            // We are looking for blocks that are effectively "owned" by this prompt (unnamed blocks)
+            // Since we store IDs for unnamed blocks now (reusing them), we need to check if they are used elsewhere.
+
+            // Get useBlockStore to check block details
+            import('../stores/useBlockStore').then(({ useBlockStore }) => {
+                const blockStore = useBlockStore.getState();
+                const allPrompts = Object.values(state.prompts).filter(p => p.id !== id); // Exclude current
+
+                // Collect IDs of blocks in this prompt that are candidates for deletion (Unnamed blocks)
+                const candidateBlockIds = new Set<string>();
+
+                // Helper to check if a block ID is unnamed
+                const checkBlock = (blockId: string) => {
+                    const block = blockStore.blocks[blockId];
+                    if (block && (!block.label || block.label.trim() === '')) {
+                        candidateBlockIds.add(blockId);
+                    }
+                };
+
+                // Scan mixed blocks array
+                promptToDelete.blocks.forEach(item => {
+                    if (typeof item === 'string') {
+                        checkBlock(item);
+                    }
+                    // Inline objects (objects in mixed array) don't have IDs in store usually? 
+                    // Wait, mixed array has {type, content} objects OR string IDs.
+                    // Objects are NOT in store. String IDs ARE in store.
+                    // So we only care about string IDs that point to unnamed blocks.
+                });
+
+                // Also check legacy inlineBlocks if any (though they usually don't have store IDs unless loaded?)
+                // Actually legacy inlineBlocks are just data, not IDs. So nothing to delete safely.
+
+                // 2. Check if these candidate blocks are used by ANY other prompt
+                const usedBlockIds = new Set<string>();
+                allPrompts.forEach(p => {
+                    p.blocks.forEach(item => {
+                        if (typeof item === 'string') {
+                            usedBlockIds.add(item);
+                        }
+                    });
+                });
+
+                // 3. Delete blocks that are NOT used elsewhere
+                candidateBlockIds.forEach(blockId => {
+                    if (!usedBlockIds.has(blockId)) {
+                        blockStore.deleteBlock(blockId);
+                    }
+                });
+            });
+
             const { [id]: _, ...rest } = state.prompts;
             return { prompts: rest };
         });
@@ -122,4 +178,29 @@ export const usePromptStore = create<PromptStore>((set, get) => ({
     },
 
     setPrompts: (prompts) => set({ prompts }),
+
+    cleanupOrphanedBlocks: () => {
+        import('../stores/useBlockStore').then(({ useBlockStore }) => {
+            const blockStore = useBlockStore.getState();
+            const allPrompts = Object.values(get().prompts);
+
+            // 1. Collect ALL block IDs referenced by any prompt
+            const usedBlockIds = new Set<string>();
+            allPrompts.forEach(p => {
+                p.blocks.forEach(item => {
+                    if (typeof item === 'string') {
+                        usedBlockIds.add(item);
+                    }
+                });
+            });
+
+            // 2. Identify and delete unused UNNAMED blocks
+            Object.values(blockStore.blocks).forEach(block => {
+                // If block is unnamed AND not in the used list
+                if ((!block.label || block.label.trim() === '') && !usedBlockIds.has(block.id)) {
+                    blockStore.deleteBlock(block.id);
+                }
+            });
+        });
+    },
 }));

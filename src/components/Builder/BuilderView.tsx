@@ -181,7 +181,7 @@ export const BuilderView = () => {
     };
 
     // Derived Data: Available Blocks in Category
-    const { getLibraryBlocks, getUnnamedBlocks } = useBlockStore();
+    const { getLibraryBlocks, getUnnamedBlocks, clearAllUnnamedBlocks } = useBlockStore();
     const { getFullPrompts } = usePromptStore();
     const categoryBlocks = useMemo(() => {
         if (selectedCategory === 'Unnamed') {
@@ -530,13 +530,32 @@ export const BuilderView = () => {
             const { draftMetadata, currentBlockIds, loadPrompt } = useBuilderStore.getState();
 
             if (activePromptId) {
+                // Construct the mixed order array
+                const mixedBlocks = currentBlockIds.map(id => {
+                    const block = useBlockStore.getState().blocks[id];
+                    if (!block) return null;
+                    // If it has a label, it's a library block -> save ID
+                    // If it has NO label, it's an inline block -> save content object
+                    if (block.label && block.label.trim()) {
+                        return block.id;
+                    } else {
+                        return {
+                            type: block.type,
+                            content: block.content
+                        };
+                    }
+                }).filter(Boolean) as (string | { type: string, content: string })[];
+
                 // Update existing
                 updatePrompt(activePromptId, {
-                    blocks: currentBlockIds,
+                    blocks: mixedBlocks,
                     title: draftMetadata.title,
                     description: draftMetadata.description,
                     tags: draftMetadata.tags as any,
                 });
+                // Commit local edits (clear them as they are now saved in the prompt)
+                useBuilderStore.getState().clearLocalBlockEdits();
+
                 finalizeSave();
             } else {
                 // Create new
@@ -547,10 +566,24 @@ export const BuilderView = () => {
                     return;
                 }
 
+                // Construct the mixed order array
+                const mixedBlocks = currentBlockIds.map(id => {
+                    const block = useBlockStore.getState().blocks[id];
+                    if (!block) return null;
+                    if (block.label && block.label.trim()) {
+                        return block.id;
+                    } else {
+                        return {
+                            type: block.type,
+                            content: block.content
+                        };
+                    }
+                }).filter(Boolean) as (string | { type: string, content: string })[];
+
                 const newId = addPrompt({
                     title,
                     description: draftMetadata.description,
-                    blocks: currentBlockIds,
+                    blocks: mixedBlocks,
                     isFullPrompt: false,
                     tags: draftMetadata.tags as any
                 });
@@ -558,6 +591,8 @@ export const BuilderView = () => {
                 const newPrompt = getPrompt(newId);
                 if (newPrompt) {
                     loadPrompt(newPrompt);
+                    // Commit local edits
+                    useBuilderStore.getState().clearLocalBlockEdits();
                     finalizeSave();
                     setIsMetadataModalOpen(false);
                 } else {
@@ -731,9 +766,22 @@ export const BuilderView = () => {
                                             gap: '0.5rem',
                                         }}>
                                             <HelpCircle size={16} style={{ flexShrink: 0, marginTop: '0.125rem' }} />
-                                            <span>
+                                            <span style={{ flex: 1 }}>
                                                 These blocks don't have names yet. Name them to add to your library and make them reusable.
                                             </span>
+                                            <button
+                                                className="icon-btn-ghost"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm("Are you sure you want to delete ALL unnamed blocks? This cannot be undone.")) {
+                                                        clearAllUnnamedBlocks();
+                                                    }
+                                                }}
+                                                title="Delete all unnamed blocks"
+                                                style={{ color: 'var(--accent-danger)' }}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                     )}
 

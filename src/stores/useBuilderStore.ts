@@ -55,16 +55,107 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     },
 
     loadPrompt: (prompt: Prompt) => {
-        set({
-            activePromptId: prompt.id,
-            currentBlockIds: [...prompt.blocks], // Copy array
-            draftMetadata: {
-                title: prompt.title,
-                description: prompt.description || '',
-                tags: prompt.tags || { style: [], topic: [], technique: [] }
-            },
-            isDirty: false,
-            fullPromptContent: null, // Clear full prompt content
+        // If the prompt has inline blocks (unnamed blocks stored with the prompt),
+        // we need to rehydrate them into the block store temporarily so they can be rendered.
+        // We'll give them temporary IDs.
+        import('../stores/useBlockStore').then(({ useBlockStore }) => {
+            const { addBlock } = useBlockStore.getState();
+
+            // 1. Process regular library blocks (already IDs)
+            // We just verify they exist, or filter them out if deleted? 
+            // For now, keep them. detailed logic might be needed if blocks are deleted.
+
+            // 2. Process inline blocks (unnamed)
+            // We need to insert them at the correct positions relative to other blocks?
+            // The prompt.blocks array in schema currently only holds IDs of named blocks (string[]).
+            // But wait, if we have a mixed list, how do we know the order?
+            // The schema says `blocks: string[]` and `inlineBlocks: InlineBlockSchema[]`.
+            // This structure essentially explicitly separates them, LOSING ORDER if they were interleaved.
+            // However, the ImportSummary saves `blocks: blockIds` (only named) and `inlineBlocks: unnamedBlocks`.
+            // This implies the current save logic DESTROYS the order of mixed prompts if they are interleaved.
+            // 
+            // BUT: If the user just imported a prompt, typically it's either fully dissected (all blocks) 
+            // or monolithic. 
+            // If the user *builds* a prompt with unnamed blocks in the Builder, we haven't supported that well yet.
+            // 
+            // PROPOSED FIX for the specific issue: "unnamed category in builder view... dont get copied... when saving"
+            // The user says "in builder canvas it only displays the blocks that are saved with names... but not the rest".
+            // This confirms `prompt.blocks` only has the named ones.
+            // And `prompt.inlineBlocks` likely has the rest, but `loadPrompt` ignores them.
+
+            // We need to:
+            // 1. Add these inline blocks to the block store as temporary blocks
+            // 2. Combine the IDs. 
+            // PROBLEM: We don't know the original order because they are stored in two separate arrays in the schema.
+            // Schema limitation: `blocks` is string[], `inlineBlocks` is array of objects.
+            // WE CANNOT RECOVER ORDER with the current schema if they were mixed.
+            // 
+            // However, usually import results in a sequence. 
+            // If the user saves from ImportSummary, we might need a way to preserve order.
+            // For now, let's just append the inline blocks so they at least appear.
+
+            // (Previous rehydration logic removed as it's now handled in the main loop above)
+
+            // Process the mixed blocks array to preserve order
+            // prompt.blocks can now contain both strings (IDs) and InlineBlock objects
+            const allIds: string[] = [];
+
+            prompt.blocks.forEach(item => {
+                if (typeof item === 'string') {
+                    // It's a library block ID
+                    allIds.push(item);
+                } else {
+                    // It's an inline block object, rehydrate it
+                    // Check if an identical unnamed block already exists to avoid duplication
+                    const existingBlock = useBlockStore.getState().checkDuplicates(item.content);
+
+                    if (existingBlock && (!existingBlock.label || existingBlock.label.trim() === '')) {
+                        // Use existing unnamed block
+                        allIds.push(existingBlock.id);
+                    } else {
+                        // Create new one only if no match found
+                        const id = addBlock({
+                            type: item.type,
+                            label: '', // Unnamed
+                            content: item.content,
+                            isFavorite: false
+                        });
+                        allIds.push(id);
+                    }
+                }
+            });
+
+            // Process legacy inlineBlocks (for backward compatibility)
+            // Append them to the end if they exist
+            if (prompt.inlineBlocks && prompt.inlineBlocks.length > 0) {
+                prompt.inlineBlocks.forEach(ib => {
+                    const existingBlock = useBlockStore.getState().checkDuplicates(ib.content);
+
+                    if (existingBlock && (!existingBlock.label || existingBlock.label.trim() === '')) {
+                        allIds.push(existingBlock.id);
+                    } else {
+                        const id = addBlock({
+                            type: ib.type,
+                            label: '',
+                            content: ib.content,
+                            isFavorite: false
+                        });
+                        allIds.push(id);
+                    }
+                });
+            }
+
+            set({
+                activePromptId: prompt.id,
+                currentBlockIds: allIds,
+                draftMetadata: {
+                    title: prompt.title,
+                    description: prompt.description || '',
+                    tags: prompt.tags || { style: [], topic: [], technique: [] }
+                },
+                isDirty: false,
+                fullPromptContent: null,
+            });
         });
     },
 

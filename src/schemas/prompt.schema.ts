@@ -12,8 +12,8 @@ export const PromptSchema = z.object({
     id: z.string(),
     title: z.string().min(1),
     description: z.string().optional(),
-    blocks: z.array(z.string()), // IDs of named library blocks
-    inlineBlocks: z.array(InlineBlockSchema).optional(), // Unnamed blocks stored inline
+    blocks: z.array(z.union([z.string(), InlineBlockSchema])), // Ordered list of IDs (library) OR InlineBlock objects (unnamed)
+    inlineBlocks: z.array(InlineBlockSchema).optional(), // Deprecated but kept for backward compatibility if needed
     isFullPrompt: z.boolean().default(false), // True if this is a monolithic prompt
     fullPromptContent: z.string().optional(), // Raw content for full prompts
     tags: z

@@ -36,41 +36,61 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
         setIsSaving(true);
 
         try {
-            // Separate named and unnamed blocks
-            const namedBlocks = blocks.filter(b => b.label && b.label.trim());
-            const unnamedBlocks = blocks.filter(b => !b.label || !b.label.trim());
 
-            // Only import named blocks to library
-            let blockIds: string[] = [];
-            if (namedBlocks.length > 0) {
-                blockIds = importBlocks(
-                    namedBlocks.map((block) => ({
+
+            // Revised Logic:
+            // 1. Identify named blocks and prepare them for import
+            const namedBlocksToImport = blocks
+                .filter(b => b.label && b.label.trim())
+                .map(b => ({
+                    type: b.suggestedType,
+                    label: b.label!,
+                    content: b.content,
+                    isFavorite: false,
+                    // We need to track which original block this corresponds to
+                    _originalId: b.id
+                }));
+
+            // 2. Import named blocks and get their new IDs
+            const newIds = importBlocks(namedBlocksToImport);
+
+            // 3. Create a map of Original Block ID -> New Library ID
+            const idMap = new Map<string, string>();
+            namedBlocksToImport.forEach((b, i) => {
+                idMap.set(b._originalId, newIds[i]);
+            });
+
+            // 4. Construct the final mixed sequence
+            const finalBlocksSequence = blocks.map(block => {
+                const isNamed = block.label && block.label.trim();
+                if (isNamed) {
+                    // Return the new Library ID
+                    return idMap.get(block.id)!;
+                } else {
+                    // Return Inline Object
+                    return {
                         type: block.suggestedType,
-                        label: block.label!,
-                        content: block.content,
-                        isFavorite: false,
-                    }))
-                );
-            }
+                        content: block.content
+                    };
+                }
+            });
 
             // Save prompt with named block IDs and unnamed blocks inline
             addPrompt({
                 title: promptTitle,
                 description: promptDescription,
-                blocks: blockIds, // Only named blocks
-                inlineBlocks: unnamedBlocks.map(block => ({
-                    type: block.suggestedType,
-                    content: block.content,
-                })), // Unnamed blocks stored inline
-                isFullPrompt: false, // This is a dissected prompt, not a full prompt
+                blocks: finalBlocksSequence,
+                // inlineBlocks: [], // No longer needed
+                isFullPrompt: false,
                 tags: {
                     style: [],
-                    topic: tags, // Store all tags in topic for now as per SaveMetadataModal simplicity
+                    topic: tags,
                     technique: [],
                 },
                 importedFrom: source.filename || 'pasted text',
                 importedAt: new Date().toISOString(),
             });
+
 
             clearSession();
             setActiveView('library');

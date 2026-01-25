@@ -7,8 +7,17 @@ interface LayoutProps {
     children: React.ReactNode;
 }
 
+import { useEffect } from 'react';
+import { usePromptStore } from '../stores/usePromptStore';
+
 export const Layout = ({ children }: LayoutProps) => {
     const { activeView, setActiveView } = useUIStore();
+    const { cleanupOrphanedBlocks } = usePromptStore();
+
+    useEffect(() => {
+        // Run cleanup of orphaned blocks on app mount to keep library clean
+        cleanupOrphanedBlocks();
+    }, [cleanupOrphanedBlocks]);
 
     return (
         <div className="layout">
