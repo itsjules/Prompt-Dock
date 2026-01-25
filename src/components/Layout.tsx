@@ -31,35 +31,35 @@ export const Layout = ({ children }: LayoutProps) => {
                             onClick={() => setActiveView('home')}
                             title="Home"
                         >
-                            <Home size={18} />
+                            <Home size={20} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'library' ? 'active' : ''}`}
                             onClick={() => setActiveView('library')}
                             title="Library"
                         >
-                            <Library size={18} />
+                            <Library size={20} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'builder' ? 'active' : ''}`}
                             onClick={() => setActiveView('builder')}
                             title="Builder"
                         >
-                            <Layers size={18} />
+                            <Layers size={20} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'import' ? 'active' : ''}`}
                             onClick={() => setActiveView('import')}
                             title="Import"
                         >
-                            <Download size={18} />
+                            <Download size={20} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'settings' ? 'active' : ''}`}
                             onClick={() => setActiveView('settings')}
                             title="Settings"
                         >
-                            <Settings size={18} />
+                            <Settings size={20} />
                         </button>
                     </div>
                 </div>
