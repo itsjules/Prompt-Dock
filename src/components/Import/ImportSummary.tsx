@@ -3,6 +3,7 @@ import { useUIStore } from '../../stores/useUIStore';
 import { useImportStore } from '../../stores/useImportStore';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { usePromptStore } from '../../stores/usePromptStore';
+import { useBuilderStore } from '../../stores/useBuilderStore';
 import './Import.css';
 import { Library, Layers, ArrowLeft, X } from 'lucide-react';
 
@@ -14,7 +15,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
     const { setActiveView } = useUIStore();
     const { currentSession, clearSession } = useImportStore();
     const { importBlocks } = useBlockStore();
-    const { addPrompt } = usePromptStore();
+    const { addPrompt, getPrompt } = usePromptStore();
 
     const [promptTitle, setPromptTitle] = useState(
         currentSession?.metadata?.promptTitle || 'Imported Prompt'
@@ -32,7 +33,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
 
     const { blocks, source } = currentSession;
 
-    const handleSave = async () => {
+    const performSave = async (): Promise<string | null> => {
         setIsSaving(true);
 
         try {
@@ -76,7 +77,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
             });
 
             // Save prompt with named block IDs and unnamed blocks inline
-            addPrompt({
+            const newPromptId = addPrompt({
                 title: promptTitle,
                 description: promptDescription,
                 blocks: finalBlocksSequence,
@@ -91,14 +92,34 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
                 importedAt: new Date().toISOString(),
             });
 
-
-            clearSession();
-            setActiveView('library');
+            return newPromptId;
         } catch (error) {
             console.error('Failed to save import:', error);
             alert('Failed to save imported prompt. Please try again.');
+            return null;
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleSaveToLibrary = async () => {
+        const id = await performSave();
+        if (id) {
+            clearSession();
+            setActiveView('library');
+        }
+    };
+
+    const handleGoToBuilder = async () => {
+        const id = await performSave();
+        if (id) {
+            // Load the new prompt into the builder
+            const prompt = getPrompt(id);
+            if (prompt) {
+                useBuilderStore.getState().loadPrompt(prompt);
+            }
+            clearSession();
+            setActiveView('builder');
         }
     };
 
@@ -119,10 +140,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
         setTags(tags.filter(t => t !== tagToRemove));
     };
 
-    const handleGoToBuilder = async () => {
-        await handleSave();
-        setActiveView('builder');
-    };
+
 
     return (
         <div className="import-summary">
@@ -302,7 +320,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
                     </button>
                     <button
                         className="import-button import-button-primary"
-                        onClick={handleSave}
+                        onClick={handleSaveToLibrary}
                         disabled={isSaving || !promptTitle.trim()}
                     >
                         <Library size={16} />
