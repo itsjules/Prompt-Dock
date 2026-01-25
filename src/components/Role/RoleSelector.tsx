@@ -52,6 +52,9 @@ export const RoleSelector = ({ size = 'default' }: RoleSelectorProps) => {
 
                 {isOpen && (
                     <div className="role-dropdown-menu">
+                        <div className="role-menu-description">
+                            Select a role to prioritize content.
+                        </div>
                         <div className="role-menu-header">Active Role</div>
                         <div className="role-menu-list">
                             {roleList.map(role => (

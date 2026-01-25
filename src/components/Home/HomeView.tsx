@@ -76,9 +76,9 @@ export const HomeView = () => {
         });
     };
 
-    const favorites = sortUnified(unifiedFavorites).slice(0, 3);
+    const favorites = sortUnified(unifiedFavorites).slice(0, 10);
     const recents = getRecents(3);
-    const collections = sortWithRole(getAllCollections(), 'collection').slice(0, 3);
+    const collections = sortWithRole(getAllCollections(), 'collection').slice(0, 10);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -171,7 +171,7 @@ export const HomeView = () => {
                 <div className="greeting-section">
                     <div className="greeting-text">
                         <h1>Hi there!</h1>
-                        <p>What are you building today?</p>
+                        <p>What are you making today?</p>
                     </div>
                     {/* Role Selector */}
                     <div className="context-badge-wrapper">

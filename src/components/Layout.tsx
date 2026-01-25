@@ -1,5 +1,5 @@
 import { useUIStore } from '../stores/useUIStore';
-import { Layers, Library, Settings, Home, Upload } from 'lucide-react';
+import { Layers, Library, Settings, Home, Download } from 'lucide-react';
 import './Layout.css';
 import logo from '../assets/logo.png';
 
@@ -31,35 +31,35 @@ export const Layout = ({ children }: LayoutProps) => {
                             onClick={() => setActiveView('home')}
                             title="Home"
                         >
-                            <Home size={20} />
+                            <Home size={18} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'library' ? 'active' : ''}`}
                             onClick={() => setActiveView('library')}
                             title="Library"
                         >
-                            <Library size={20} />
+                            <Library size={18} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'builder' ? 'active' : ''}`}
                             onClick={() => setActiveView('builder')}
                             title="Builder"
                         >
-                            <Layers size={20} />
+                            <Layers size={18} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'import' ? 'active' : ''}`}
                             onClick={() => setActiveView('import')}
                             title="Import"
                         >
-                            <Upload size={20} />
+                            <Download size={18} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'settings' ? 'active' : ''}`}
                             onClick={() => setActiveView('settings')}
                             title="Settings"
                         >
-                            <Settings size={20} />
+                            <Settings size={18} />
                         </button>
                     </div>
                 </div>
