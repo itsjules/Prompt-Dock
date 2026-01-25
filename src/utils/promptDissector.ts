@@ -14,6 +14,7 @@ const BLOCK_PATTERNS = {
             /^#+\s*Character\s*:?/im,
             /^#+\s*Actor\s*:?/im,  // Added as requested
             /^Actor\s*:?/im,       // Added as requested
+            /^A:\s*/im,            // Abbreviated format (TACO)
         ],
         keywords: ['expert', 'assistant', 'persona', 'character', 'specialist', 'professional', 'actor'],
         patterns: [
@@ -28,6 +29,7 @@ const BLOCK_PATTERNS = {
             /^#+\s*Objective\s*:?/im,
             /^Objective\s*:?/im,
             /^#+\s*Goal\s*:?/im,
+            /^T:\s*/im,            // Abbreviated format (TACO)
         ],
         keywords: ['create', 'generate', 'write', 'analyze', 'develop', 'design', 'build', 'implement'],
         patterns: [
@@ -42,6 +44,7 @@ const BLOCK_PATTERNS = {
             /^#+\s*Background\s*:?/im,
             /^Background\s*:?/im,
             /^#+\s*Information\s*:?/im,
+            /^C:\s*/im,            // Abbreviated format (TACO)
         ],
         keywords: ['given', 'considering', 'based on', 'background', 'information', 'details'],
         patterns: [
@@ -56,6 +59,7 @@ const BLOCK_PATTERNS = {
             /^#+\s*Format\s*:?/im,
             /^Format\s*:?/im,
             /^#+\s*Response\s*:?/im,
+            /^O:\s*/im,            // Abbreviated format (TACO)
         ],
         keywords: ['format', 'structure', 'return', 'provide', 'output', 'response', 'result'],
         patterns: [
@@ -228,11 +232,8 @@ export function dissectPrompt(text: string): DissectedBlock[] {
     const blocks: DissectedBlock[] = segments.map((segment) => {
         const { type, confidence } = detectBlockType(segment);
 
-        // Generate a label from the segment
-        const label = generateLabel(segment, type);
-
+        // Don't auto-generate labels - let users enter them manually
         return createDissectedBlock(segment, type, confidence, {
-            label,
             startPosition: text.indexOf(segment),
             endPosition: text.indexOf(segment) + segment.length,
         });
@@ -245,14 +246,43 @@ export function dissectPrompt(text: string): DissectedBlock[] {
  * Generate a label for a block based on its content
  */
 function generateLabel(content: string, type: string): string {
-    // Remove markdown headings and markers
-    let cleaned = content.replace(/^#+\s*/gm, '').replace(/^\w+\s*:\s*/gm, '');
+    // Remove markdown headings first
+    let cleaned = content.replace(/^#+\s*/gm, '');
 
-    // Get first line or first 50 characters
-    const firstLine = cleaned.split('\n')[0].trim();
-    const label = firstLine.length > 50 ? firstLine.substring(0, 47) + '...' : firstLine;
+    // Remove common markers (both full and abbreviated forms)
+    cleaned = cleaned
+        .replace(/^(Task|Role|Actor|Context|Background|Output|Format|Style|Tone|Constraints|Rules)\s*:\s*/im, '')
+        .replace(/^[TARCO]:\s*/im, ''); // Remove T:, A:, R:, C:, O: markers
 
-    return label || `${type} Block`;
+    // Get first line or first sentence
+    const lines = cleaned.split('\n').filter(line => line.trim().length > 0);
+    if (lines.length === 0) return `${type} Block`;
+
+    let firstLine = lines[0].trim();
+
+    // If the first line is very short, try to include more context
+    if (firstLine.length < 20 && lines.length > 1) {
+        firstLine = lines.slice(0, 2).join(' ').trim();
+    }
+
+    // Truncate intelligently at sentence or word boundary
+    if (firstLine.length > 60) {
+        // Try to cut at a sentence boundary
+        const sentenceEnd = firstLine.substring(0, 60).lastIndexOf('.');
+        if (sentenceEnd > 30) {
+            return firstLine.substring(0, sentenceEnd + 1);
+        }
+
+        // Otherwise cut at word boundary
+        const lastSpace = firstLine.substring(0, 60).lastIndexOf(' ');
+        if (lastSpace > 30) {
+            return firstLine.substring(0, lastSpace) + '...';
+        }
+
+        return firstLine.substring(0, 57) + '...';
+    }
+
+    return firstLine || `${type} Block`;
 }
 
 /**

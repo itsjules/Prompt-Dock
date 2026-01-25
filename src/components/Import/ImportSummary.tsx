@@ -95,37 +95,32 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
             <div className="import-summary-content-grid">
                 {/* Left Column: Block Preview + Stats */}
                 <div className="import-summary-preview">
-                    {/* Compact Stats Embedded Here */}
-                    <div className="import-summary-stats">
-                        <div className="import-summary-stat">
-                            <div className="import-summary-stat-value">{blocks.length}</div>
-                            <div className="import-summary-stat-label">Blocks</div>
-                        </div>
-                        <div className="import-summary-stat">
-                            <div className="import-summary-stat-value">
-                                {blocks.filter((b) => b.isManual).length}
-                            </div>
-                            <div className="import-summary-stat-label">Manual</div>
-                        </div>
-                        <div className="import-summary-stat">
-                            <div className="import-summary-stat-value">
-                                {blocks.filter((b) => b.confidence >= 80).length}
-                            </div>
-                            <div className="import-summary-stat-label">High Conf.</div>
-                        </div>
-                    </div>
-
-                    <h3 style={{ marginTop: '1.5rem' }}>Block Preview</h3>
+                    <h3 style={{ margin: 0, marginBottom: '0.25rem' }}>Block Preview</h3>
+                    <p style={{
+                        fontSize: '0.875rem',
+                        color: 'var(--text-secondary)',
+                        fontStyle: 'italic',
+                        margin: '0 0 1rem 0'
+                    }}>
+                        Enter names for the blocks
+                    </p>
                     <div className="import-summary-block-list">
                         {blocks.map((block, index) => (
                             <div key={block.id} className="import-summary-block-item">
                                 <div className="import-summary-block-type">
                                     {index + 1}. {block.suggestedType}
                                 </div>
-                                <div className="import-summary-block-preview">
-                                    {block.content.substring(0, 100)}
-                                    {block.content.length > 100 ? '...' : ''}
-                                </div>
+                                <input
+                                    type="text"
+                                    className="import-summary-block-label-input"
+                                    value={block.label || ''}
+                                    onChange={(e) => {
+                                        // Update the block label in the store
+                                        const { updateBlock } = useImportStore.getState();
+                                        updateBlock(block.id, { label: e.target.value });
+                                    }}
+                                    placeholder="Enter block name..."
+                                />
                             </div>
                         ))}
                     </div>

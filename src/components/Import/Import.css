@@ -532,10 +532,48 @@
     margin-bottom: 1rem;
 }
 
-.dissection-block-label {
+.dissection-block-label-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     flex: 1;
+    min-width: 0;
+}
+
+.block-number {
     font-weight: 600;
     color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+.dissection-block-label-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.dissection-block-label-input:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.dissection-block-label-input:focus {
+    background-color: var(--bg-tertiary);
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+.dissection-block-label-input::placeholder {
+    color: var(--text-tertiary);
+    font-style: italic;
+    opacity: 0.6;
 }
 
 .dissection-block-content {
@@ -759,7 +797,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     background-color: var(--bg-tertiary);
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
@@ -771,11 +809,33 @@
     min-width: 100px;
 }
 
-.import-summary-block-preview {
+.import-summary-block-label-input {
     flex: 1;
-    color: var(--text-secondary);
+    min-width: 0;
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
     font-size: 0.875rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-weight: 500;
+    padding: 0.4rem 0.65rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.import-summary-block-label-input:hover {
+    border-color: var(--text-secondary);
+}
+
+.import-summary-block-label-input:focus {
+    background-color: var(--bg-primary);
+    border-color: var(--accent-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.1);
+}
+
+.import-summary-block-label-input::placeholder {
+    color: var(--text-tertiary);
+    font-style: italic;
+    opacity: 0.6;
 }

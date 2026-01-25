@@ -19,6 +19,10 @@ export const DissectionCanvas: React.FC = () => {
         updateBlock(id, { content });
     };
 
+    const handleLabelChange = (id: string, label: string) => {
+        updateBlock(id, { label });
+    };
+
     const handleTypeChange = (id: string, newType: string) => {
         changeBlockType(id, newType);
     };
@@ -115,9 +119,16 @@ export const DissectionCanvas: React.FC = () => {
                             className="dissection-block-card"
                         >
                             <div className="dissection-block-header">
-                                <span className="dissection-block-label">
-                                    Block {index + 1}: {block.label || block.suggestedType}
-                                </span>
+                                <div className="dissection-block-label-wrapper">
+                                    <span className="block-number">Block {index + 1}:</span>
+                                    <input
+                                        type="text"
+                                        className="dissection-block-label-input"
+                                        value={block.label || ''}
+                                        onChange={(e) => handleLabelChange(block.id, e.target.value)}
+                                        placeholder="Enter block name..."
+                                    />
+                                </div>
                                 <ConfidenceBadge
                                     level={block.confidenceLevel}
                                     score={block.confidence}
