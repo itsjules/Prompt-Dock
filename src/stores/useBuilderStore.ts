@@ -12,10 +12,12 @@ interface BuilderStore {
     };
     isDirty: boolean;
     localBlockEdits: Record<string, { label?: string; content?: string }>;
+    fullPromptContent: string | null; // Store full prompt content when loaded
 
     // Actions
     setForNew: () => void;
     loadPrompt: (prompt: Prompt) => void;
+    loadFullPrompt: (prompt: Prompt) => void; // New method for full prompts
     setDraftMetadata: (metadata: Partial<{ title: string; description: string; tags: Record<string, string[]> }>) => void;
 
     addBlockId: (id: string, index?: number) => void;
@@ -41,6 +43,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     currentBlockIds: [],
     draftMetadata: DEFAULT_METADATA,
     isDirty: false,
+    fullPromptContent: null,
 
     setForNew: () => {
         set({
@@ -60,7 +63,38 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
                 description: prompt.description || '',
                 tags: prompt.tags || { style: [], topic: [], technique: [] }
             },
-            isDirty: false
+            isDirty: false,
+            fullPromptContent: null, // Clear full prompt content
+        });
+    },
+
+    loadFullPrompt: (prompt: Prompt) => {
+        // For full prompts, we'll create a special block to hold the content
+        // This allows mixing full prompts with other blocks
+        // Import dynamically to avoid circular dependency
+        import('../stores/useBlockStore').then(({ useBlockStore }) => {
+            const { addBlock } = useBlockStore.getState();
+
+            // Create a special "FullPrompt" type block
+            const blockId = addBlock({
+                type: 'Full Prompt', // Use Full Prompt as the type
+                label: prompt.title, // Just use the title without prefix
+                content: prompt.fullPromptContent || '',
+                isFavorite: false,
+                isFullPrompt: true, // Special flag to identify full prompt blocks
+            });
+
+            set({
+                activePromptId: prompt.id,
+                currentBlockIds: [blockId], // Start with the full prompt block
+                draftMetadata: {
+                    title: prompt.title,
+                    description: prompt.description || '',
+                    tags: prompt.tags || { style: [], topic: [], technique: [] }
+                },
+                isDirty: false,
+                fullPromptContent: null, // Not using this anymore
+            });
         });
     },
 
@@ -156,7 +190,8 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
             // Reset metadata for new prompt on clear
             draftMetadata: DEFAULT_METADATA,
             localBlockEdits: {}, // Clear local edits too
-            isDirty: false // Reset dirty state as we are essentially starting fresh
+            isDirty: false, // Reset dirty state as we are essentially starting fresh
+            fullPromptContent: null, // Clear full prompt content
         });
     }
 }));

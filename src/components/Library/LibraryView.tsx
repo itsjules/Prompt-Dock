@@ -103,7 +103,7 @@ export const LibraryView = () => {
     const [filterItemTypes, setFilterItemTypes] = useState<Set<'prompt' | 'block'>>(new Set(['prompt', 'block']));
 
     // Sort State
-    const [sortBy, setSortBy] = useState<'relevance' | 'newest' | 'usage'>('relevance');
+    const [sortBy, setSortBy] = useState<'relevance' | 'newest' | 'usage'>('newest');
     const [isSortOpen, setIsSortOpen] = useState(false);
 
     // Filter Options

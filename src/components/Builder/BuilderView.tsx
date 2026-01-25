@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2, PanelLeftClose, PanelLeftOpen, Star } from 'lucide-react';
+import { Plus, Copy, Trash, Save, Search, User, CheckSquare, FileText, MessageSquare, Palette, ShieldAlert, Check, Loader2, X, Eye, Folder, MoreVertical, Edit2, Trash2, PanelLeftClose, PanelLeftOpen, Star, HelpCircle } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { useBlockStore } from '../../stores/useBlockStore';
 import { useBuilderStore } from '../../stores/useBuilderStore';
 import { usePromptStore } from '../../stores/usePromptStore';
+import { useUIStore } from '../../stores/useUIStore';
+import { useImportStore } from '../../stores/useImportStore';
 import { BlockComponent } from './Block';
 import { BlockType } from '../../schemas/block.schema';
 import { SaveMetadataModal } from './SaveMetadataModal';
@@ -33,15 +35,18 @@ const getRelativeTime = (isoString: string) => {
 };
 
 const BLOCK_TYPES: BlockType[] = ['Role', 'Task', 'Context', 'Output', 'Style', 'Constraints'];
+const SPECIAL_CATEGORIES = ['Full Prompts', 'Unnamed'] as const; // Special categories that aren't block types
 
 // Map block types to icons
-const TYPE_ICONS: Record<BlockType, React.ElementType> = {
+const TYPE_ICONS: Record<BlockType, React.ElementType> & Record<string, React.ElementType> = {
     Role: User,
     Task: CheckSquare,
     Context: FileText,
     Output: MessageSquare,
     Style: Palette,
     Constraints: ShieldAlert,
+    'Full Prompts': FileText, // Special category for full prompts
+    Unnamed: HelpCircle, // Special category for unnamed blocks
 };
 
 // Templates for creating new blocks (Best Practices)
@@ -161,7 +166,8 @@ export const BuilderView = () => {
         isDirty,
         localBlockEdits,
         setLocalBlockEdit,
-        removeLocalBlockEdit
+        removeLocalBlockEdit,
+        fullPromptContent, // Add full prompt content
     } = useBuilderStore();
     const { addBlock, updateBlock, getBlocksByType, addCategory, updateCategory, removeCategory, customCategories, incrementUsage: incrementBlockUsage, toggleFavorite: toggleBlockFavorite } = useBlockStore();
     const blocksMap = useBlockStore(state => state.blocks);
@@ -176,9 +182,18 @@ export const BuilderView = () => {
     };
 
     // Derived Data: Available Blocks in Category
+    const { getLibraryBlocks, getUnnamedBlocks } = useBlockStore();
+    const { getFullPrompts } = usePromptStore();
     const categoryBlocks = useMemo(() => {
-        return getBlocksByType(selectedCategory);
-    }, [selectedCategory, blocksMap]);
+        if (selectedCategory === 'Unnamed') {
+            return getUnnamedBlocks();
+        }
+        if (selectedCategory === 'Full Prompts') {
+            // Return empty array for Full Prompts - we'll handle this separately
+            return [];
+        }
+        return getBlocksByType(selectedCategory).filter(b => b.label && b.label.trim());
+    }, [selectedCategory, blocksMap, getLibraryBlocks, getUnnamedBlocks, getFullPrompts]);
 
     // Search Filtering
     // Search Filtering
@@ -445,24 +460,6 @@ export const BuilderView = () => {
         return { warnings, suggestions, hasIssues: warnings.length > 0 || suggestions.length > 0 };
     }, [currentBlockIds, blocksMap]);
 
-
-    const handleCopyPreview = () => {
-        navigator.clipboard.writeText(livePreview);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-
-        // Track Usage
-        if (activePromptId) {
-            incrementPromptUsage(activePromptId);
-        }
-        // Track usage for all blocks used in this composition
-        currentBlockIds.forEach(id => {
-            // We only track usage for blocks that are actually in the library (not just local drafts, though they might be same ID)
-            // The store handles invalid IDs gracefully.
-            incrementBlockUsage(id);
-        });
-    };
-
     // --- Prompt Persisting ---
 
     const handleOpenSaveModal = () => {
@@ -482,37 +479,17 @@ export const BuilderView = () => {
     };
 
     const handleSavePromptClick = async () => {
+        // Check if prompt has content
         if (currentBlockIds.length === 0) {
             alert('Cannot save an empty prompt.');
             return;
         }
 
-        // Warn if there are unsaved block edits?
+        // Warn if there are unsaved block edits
         if (Object.keys(localBlockEdits).length > 0) {
             if (!confirm("You have unsaved edits to some blocks. These local edits will NOT be saved to the library, but they will be saved as part of this prompt's composition. Continue?")) {
                 return;
             }
-            // Actually, for Prompt persistence, we usually save the Block IDs.
-            // If the user made local edits, those ARE NOT standard blocks yet.
-            // The prompt data structure usually just stores IDs.
-            // If we just save IDs, the local edits are LOST upon reload unless we persist them.
-            // Requirement check: "save this edited version if i want to" -> implied block saving.
-            // If the user strictly saves the PROMPT, the prompt probably refers to Block IDs.
-            // If the blocks aren't updated, the prompt will load old content.
-            // CRITICAL: We should probably force resolving block saves or auto-fork/overwrite?
-            // "but i should also be able to save this edited version IF i want to" implies optionality.
-            // If they DON'T save the block, what happens?
-            // Standard behavior: The prompt is a collection of blocks. If I change the text in the canvas, 
-            // usually in tools like this, it diverges from the library block (becomes detached or requires saving).
-            // Current app architecture: `currentBlockIds` is list of strings. `usePromptStore` saves `blocks: string[]`.
-            // So it ONLY saves IDs.
-            // So if I don't save the block changes to the library (overwrite or fork), they are LOST.
-            // So I MUST warn the user or auto-save.
-            // The prompt saving logic in `performPromptSave` uses `currentBlockIds`.
-            // The `localBlockEdits` are ephemeral.
-            // I will add a check: if `localBlockEdits` has keys, force user to resolve them or warn they will be lost.
-            // The alert above warns they will be saved "as part of this prompt composition" -> THIS IS FALSE currently.
-            // Correct warning: "You have unsaved edits. Please save your block changes (overwrite or fork) before saving the prompt, otherwise these changes will be lost."
         }
 
         if (!activePromptId) {
@@ -525,6 +502,7 @@ export const BuilderView = () => {
     };
 
     const performPromptSave = async () => {
+        // Check for block edits
         if (Object.keys(localBlockEdits).length > 0) {
             alert("Please save your block edits (using the save icon on the block) before saving the prompt to ensure changes are persisted.");
             return;
@@ -544,10 +522,8 @@ export const BuilderView = () => {
                     blocks: currentBlockIds,
                     title: draftMetadata.title,
                     description: draftMetadata.description,
-                    tags: draftMetadata.tags as any
+                    tags: draftMetadata.tags as any,
                 });
-                // Find prompt to reload proper "last updated" time?
-                // The store updates efficiently, but let's Ensure we update our usage.
                 finalizeSave();
             } else {
                 // Create new
@@ -562,6 +538,7 @@ export const BuilderView = () => {
                     title,
                     description: draftMetadata.description,
                     blocks: currentBlockIds,
+                    isFullPrompt: false,
                     tags: draftMetadata.tags as any
                 });
 
@@ -623,7 +600,7 @@ export const BuilderView = () => {
                                     <h3>Categories</h3>
                                 </div>
                                 <div className="category-list">
-                                    {[...BLOCK_TYPES, ...customCategories.map(c => c.name)].map(type => {
+                                    {[...BLOCK_TYPES, ...customCategories.map(c => c.name), ...SPECIAL_CATEGORIES].map(type => {
                                         const Icon = getCategoryIcon(type);
                                         const isCustom = customCategories.some(c => c.name === type);
                                         return (
@@ -714,14 +691,100 @@ export const BuilderView = () => {
                                 </div>
 
                                 <div className="picker-content">
-                                    {/* Create New Block Card */}
-                                    <div
-                                        className={`picker-card create-new ${isCreatingBlock ? 'active' : ''}`}
-                                        onClick={handleCreateBlockClick}
-                                    >
-                                        <Plus size={20} />
-                                        <span style={{ pointerEvents: 'none' }}>New {selectedCategory}</span>
-                                    </div>
+                                    {/* Helper message for Unnamed category */}
+                                    {selectedCategory === 'Unnamed' && (
+                                        <div style={{
+                                            padding: '1rem',
+                                            backgroundColor: 'var(--bg-tertiary)',
+                                            borderRadius: 'var(--radius-md)',
+                                            marginBottom: '1rem',
+                                            fontSize: '0.875rem',
+                                            color: 'var(--text-secondary)',
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            gap: '0.5rem',
+                                        }}>
+                                            <HelpCircle size={16} style={{ flexShrink: 0, marginTop: '0.125rem' }} />
+                                            <span>
+                                                These blocks don't have names yet. Name them to add to your library and make them reusable.
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Full Prompts display */}
+                                    {selectedCategory === 'Full Prompts' && (
+                                        <>
+                                            <div style={{
+                                                padding: '1rem',
+                                                backgroundColor: 'var(--bg-tertiary)',
+                                                borderRadius: 'var(--radius-md)',
+                                                marginBottom: '1rem',
+                                                fontSize: '0.875rem',
+                                                color: 'var(--text-secondary)',
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                gap: '0.5rem',
+                                            }}>
+                                                <FileText size={16} style={{ flexShrink: 0, marginTop: '0.125rem' }} />
+                                                <span>
+                                                    Monolithic prompts saved as single units. Add to canvas to use or edit.
+                                                </span>
+                                            </div>
+                                            {getFullPrompts().length === 0 ? (
+                                                <div className="empty-search">
+                                                    <p>No full prompts yet. Use "Skip Dissection" when importing to save prompts as full units.</p>
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                    {getFullPrompts().map(prompt => (
+                                                        <div
+                                                            key={prompt.id}
+                                                            style={{
+                                                                padding: '1rem',
+                                                                backgroundColor: 'var(--bg-tertiary)',
+                                                                borderRadius: 'var(--radius-md)',
+                                                                border: '1px solid var(--border-color)',
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            <div style={{ marginBottom: '0.5rem' }}>
+                                                                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{prompt.title}</div>
+                                                                {prompt.description && (
+                                                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                                                        {prompt.description}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                className="icon-btn-ghost"
+                                                                style={{ fontSize: '0.875rem' }}
+                                                                onClick={() => {
+                                                                    const { loadFullPrompt } = useBuilderStore.getState();
+                                                                    const { setActiveView } = useUIStore.getState();
+                                                                    loadFullPrompt(prompt);
+                                                                    setActiveView('builder');
+                                                                }}
+                                                            >
+                                                                <Plus size={14} />
+                                                                <span>Add to Canvas</span>
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {/* Create New Block Card - Hidden for special categories */}
+                                    {selectedCategory !== 'Unnamed' && selectedCategory !== 'Full Prompts' && (
+                                        <div
+                                            className={`picker-card create-new ${isCreatingBlock ? 'active' : ''}`}
+                                            onClick={handleCreateBlockClick}
+                                        >
+                                            <Plus size={20} />
+                                            <span style={{ pointerEvents: 'none' }}>New {selectedCategory}</span>
+                                        </div>
+                                    )}
 
 
 
@@ -864,6 +927,33 @@ export const BuilderView = () => {
                                                                 onSave={handleRequestSaveBlock}
                                                                 onDelete={handleDeleteBlockFromCanvas}
                                                                 onMove={handleMoveBlockInCanvas}
+                                                                onDissect={(blockId) => {
+                                                                    // Open import dissection with full prompt content
+                                                                    const fullBlock = blocksMap[blockId];
+                                                                    if (fullBlock?.isFullPrompt && activePromptId) {
+                                                                        const { setActiveView } = useUIStore.getState();
+                                                                        const { startImport, dissectPrompt } = useImportStore.getState();
+
+                                                                        // Get the original prompt to pass metadata
+                                                                        const originalPrompt = getPrompt(activePromptId);
+
+                                                                        startImport({
+                                                                            type: 'text',
+                                                                            content: fullBlock.content
+                                                                        }, {
+                                                                            title: originalPrompt?.title,
+                                                                            description: originalPrompt?.description,
+                                                                            tags: originalPrompt?.tags ? [
+                                                                                ...(originalPrompt.tags.style || []),
+                                                                                ...(originalPrompt.tags.topic || []),
+                                                                                ...(originalPrompt.tags.technique || [])
+                                                                            ] : []
+                                                                        });
+                                                                        // Trigger auto-dissection to skip input step
+                                                                        setTimeout(() => dissectPrompt(), 100);
+                                                                        setActiveView('import');
+                                                                    }
+                                                                }}
                                                                 categoryColor={getCategoryColor(block.type)}
                                                             />
                                                         );
@@ -911,8 +1001,24 @@ export const BuilderView = () => {
                             >
                                 <button
                                     className={`footer-btn primary ${isCopied ? 'success' : ''}`}
-                                    onClick={handleCopyPreview}
-                                    disabled={currentBlockIds.length === 0}
+                                    onClick={() => {
+                                        const textToCopy = fullPromptContent || livePreview;
+                                        if (textToCopy) {
+                                            navigator.clipboard.writeText(textToCopy);
+                                            setIsCopied(true);
+                                            setTimeout(() => setIsCopied(false), 2000);
+
+                                            // Track Usage
+                                            if (activePromptId) {
+                                                incrementPromptUsage(activePromptId);
+                                            }
+                                            // Track usage for all blocks used in this composition
+                                            currentBlockIds.forEach(id => {
+                                                incrementBlockUsage(id);
+                                            });
+                                        }
+                                    }}
+                                    disabled={!fullPromptContent && currentBlockIds.length === 0}
                                 >
                                     {isCopied ? <Check size={16} /> : <Copy size={16} />}
                                     {isCopied ? 'Copied!' : 'Copy'}

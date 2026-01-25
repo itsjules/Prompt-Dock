@@ -9,6 +9,7 @@ export const BlockSchema = z.object({
     content: z.string().min(1),
     variables: z.record(z.string()).optional(),
     isFavorite: z.boolean().default(false),
+    isFullPrompt: z.boolean().optional(), // Flag for full prompt blocks
     usageCount: z.number().default(0),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),

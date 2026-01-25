@@ -1,13 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useImportStore } from '../../stores/useImportStore';
 import { ImportInput } from './ImportInput';
 import { DissectionCanvas } from './DissectionCanvas';
 import { ImportSummary } from './ImportSummary';
 import type { ImportSource } from '../../schemas/import.schema';
+import { usePromptStore } from '../../stores/usePromptStore';
+import { useUIStore } from '../../stores/useUIStore';
 import './Import.css';
 
 export const ImportView: React.FC = () => {
-    const { currentSession, startImport, dissectPrompt, setStage } = useImportStore();
+    const { currentSession, startImport, dissectPrompt, setStage, clearSession } = useImportStore();
+    const { addPrompt } = usePromptStore();
+    const { setActiveView } = useUIStore();
+    const [skipModalOpen, setSkipModalOpen] = useState(false);
+    const [skipContent, setSkipContent] = useState('');
+    const [skipSource, setSkipSource] = useState<{ type: 'text' | 'file'; filename?: string } | null>(null);
 
     useEffect(() => {
         return () => {
@@ -39,6 +46,12 @@ export const ImportView: React.FC = () => {
         setStage('dissection');
     };
 
+    const handleSkipDissection = (content: string, source: { type: 'text' | 'file'; filename?: string }) => {
+        setSkipContent(content);
+        setSkipSource(source);
+        setSkipModalOpen(true);
+    };
+
     const currentStage = currentSession?.stage || 'input';
 
     return (
@@ -61,7 +74,7 @@ export const ImportView: React.FC = () => {
                 </div>
             </div>
 
-            {currentStage === 'input' && <ImportInput onNext={handleInputNext} />}
+            {currentStage === 'input' && <ImportInput onNext={handleInputNext} onSkip={handleSkipDissection} />}
 
             {currentStage === 'dissection' && (
                 <>
@@ -85,7 +98,115 @@ export const ImportView: React.FC = () => {
             )}
 
             {currentStage === 'review' && (
-                <ImportSummary onBack={handleReviewBack} />
+                <>
+                    <ImportSummary onBack={handleReviewBack} />
+                </>
+            )}
+
+            {/* Skip Dissection Modal */}
+            {skipModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                }}>
+                    <div style={{
+                        backgroundColor: 'var(--bg-primary)',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '2rem',
+                        maxWidth: '500px',
+                        width: '90%',
+                        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                    }}>
+                        <h2 style={{ marginTop: 0, marginBottom: '1rem' }}>Save Full Prompt</h2>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                            Save this prompt as a single unit without dissection. You can add it to the canvas later.
+                        </p>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Title</label>
+                            <input
+                                type="text"
+                                placeholder="Enter prompt title..."
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: '1px solid var(--border-color)',
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
+                                }}
+                                id="full-prompt-title"
+                            />
+                        </div>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Description (optional)</label>
+                            <textarea
+                                placeholder="Enter description..."
+                                rows={3}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: '1px solid var(--border-color)',
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
+                                    resize: 'vertical',
+                                }}
+                                id="full-prompt-description"
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                            <button
+                                className="import-button import-button-secondary"
+                                onClick={() => {
+                                    setSkipModalOpen(false);
+                                    setSkipContent('');
+                                    setSkipSource(null);
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="import-button import-button-primary"
+                                onClick={() => {
+                                    const titleInput = document.getElementById('full-prompt-title') as HTMLInputElement;
+                                    const descInput = document.getElementById('full-prompt-description') as HTMLTextAreaElement;
+                                    const title = titleInput?.value.trim();
+                                    const description = descInput?.value.trim();
+
+                                    if (!title) {
+                                        alert('Please enter a title');
+                                        return;
+                                    }
+
+                                    addPrompt({
+                                        title,
+                                        description,
+                                        blocks: [],
+                                        isFullPrompt: true,
+                                        fullPromptContent: skipContent,
+                                        tags: { style: [], topic: [], technique: [] },
+                                        importedFrom: skipSource?.filename || 'pasted text',
+                                        importedAt: new Date().toISOString(),
+                                    });
+
+                                    clearSession();
+                                    setSkipModalOpen(false);
+                                    setActiveView('library');
+                                }}
+                            >
+                                Save Full Prompt
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

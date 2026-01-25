@@ -17,6 +17,7 @@ interface BlockProps {
     onAdd?: (id: string) => void; // New prop for adding block to canvas
     onClick?: () => void; // New prop for click interaction
     onToggleFavorite?: (id: string) => void; // New prop for favoriting
+    onDissect?: (id: string) => void; // New prop for dissecting full prompts
     // Display / Behavior Flags
     draggableId?: string;
     isDraggable?: boolean;
@@ -48,6 +49,7 @@ export const BlockComponent = ({
     onAdd,
     onClick,
     onToggleFavorite,
+    onDissect,
     draggableId,
     isDraggable = true,
     isEditable = true,
@@ -157,6 +159,16 @@ export const BlockComponent = ({
                             style={{ color: block.isFavorite ? '#ffb400' : headerContentColor, background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex' }}
                         >
                             <Star size={14} fill={block.isFavorite ? "currentColor" : "none"} />
+                        </button>
+                    )}
+                    {block.isFullPrompt && onDissect && (
+                        <button
+                            className="block-dissect-btn"
+                            onClick={(e) => { e.stopPropagation(); onDissect(block.id); }}
+                            title="Dissect into blocks"
+                            style={{ color: headerContentColor, background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 6px', display: 'flex', fontSize: '0.7rem', fontWeight: 600 }}
+                        >
+                            DISSECT
                         </button>
                     )}
                     {isDirty && onSave && (

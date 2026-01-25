@@ -24,7 +24,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
     );
     // Tag State
     const [tagInput, setTagInput] = useState('');
-    const [tags, setTags] = useState<string[]>([]);
+    const [tags, setTags] = useState<string[]>(currentSession?.metadata?.tags || []);
 
     const [isSaving, setIsSaving] = useState(false);
 

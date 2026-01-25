@@ -5,10 +5,11 @@ import './Import.css';
 
 interface ImportInputProps {
     onNext: (content: string, source: { type: 'text' | 'file'; filename?: string }) => void;
+    onSkip?: (content: string, source: { type: 'text' | 'file'; filename?: string }) => void;
 }
 
 
-export const ImportInput: React.FC<ImportInputProps> = ({ onNext }) => {
+export const ImportInput: React.FC<ImportInputProps> = ({ onNext, onSkip }) => {
     const [textInput, setTextInput] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -190,6 +191,30 @@ Create a function that..."
 
             {/* Actions */}
             <div className="import-actions">
+                {onSkip && hasInput && (
+                    <button
+                        className="import-button import-button-secondary"
+                        onClick={async () => {
+                            try {
+                                if (selectedFile) {
+                                    const content = await readFile(selectedFile);
+                                    onSkip(content, {
+                                        type: 'file',
+                                        filename: selectedFile.name,
+                                    });
+                                } else if (textInput.trim()) {
+                                    onSkip(textInput, {
+                                        type: 'text',
+                                    });
+                                }
+                            } catch (err) {
+                                setError(err instanceof Error ? err.message : 'Failed to read file');
+                            }
+                        }}
+                    >
+                        Skip Dissection
+                    </button>
+                )}
                 <button
                     className="import-button import-button-primary"
                     onClick={handleNext}
