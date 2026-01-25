@@ -21,7 +21,7 @@ export const LibraryView = () => {
     const { getAllBlocks, getFavoriteBlocks: getFavBlocks, deleteBlock, toggleFavorite: toggleBlockFavorite } = useBlockStore();
 
     const { searchQuery, setActiveView, libraryTab, setLibraryTab, activeCollectionId, setActiveCollectionId } = useUIStore();
-    const { loadPrompt, addBlockId } = useBuilderStore();
+    const { loadPrompt, loadFullPrompt, addBlockId } = useBuilderStore();
     const activeRoleId = useRoleStore(state => state.activeRoleId);
     const getRelevanceScore = useRoleStore(state => state.getRelevanceScore);
 
@@ -39,7 +39,7 @@ export const LibraryView = () => {
 
     // Helper to get items based on active tab
     const { promtData, blockData } = useMemo(() => {
-        let p = getAllPrompts();
+        let p = getAllPrompts(); // Show all prompts including full prompts
         let b = getAllBlocks();
 
         if (activeTab === 'collections' && activeCollectionId) {
@@ -47,10 +47,10 @@ export const LibraryView = () => {
             p = p.filter(item => collection?.promptIds.includes(item.id));
             b = b.filter(item => collection?.blockIds?.includes(item.id)); // Optional chaining for migration safety
         } else if (activeTab === 'favorites') {
-            p = getFavPrompts();
+            p = getFavPrompts(); // Show all favorite prompts including full prompts
             b = getFavBlocks();
         } else if (activeTab === 'recents') {
-            p = getRecents();
+            p = getRecents(); // Show all recent prompts including full prompts
             b = []; // Blocks don't have "recents" logic yet in this store version
         }
 
@@ -255,7 +255,12 @@ export const LibraryView = () => {
         const prompt = getAllPrompts().find(p => p.id === promptId);
         if (prompt) {
             usePromptStore.getState().incrementUsage(promptId);
-            loadPrompt(prompt);
+            // Use loadFullPrompt for full prompts, loadPrompt for regular prompts
+            if (prompt.isFullPrompt) {
+                loadFullPrompt(prompt);
+            } else {
+                loadPrompt(prompt);
+            }
             setActiveView('builder');
         }
     };

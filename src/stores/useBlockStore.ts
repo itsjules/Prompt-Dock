@@ -154,7 +154,12 @@ export const useBlockStore = create<BlockStore>((set, get) => ({
         Object.values(get().blocks).filter((block) => block.type === type),
 
     getLibraryBlocks: () =>
-        Object.values(get().blocks).filter((block) => block.label && block.label.trim().length > 0),
+        Object.values(get().blocks).filter((block) =>
+            block.label &&
+            block.label.trim().length > 0 &&
+            !block.isFullPrompt &&
+            block.type !== 'Full Prompt'
+        ),
 
     getUnnamedBlocks: () =>
         Object.values(get().blocks).filter((block) => !block.label || block.label.trim().length === 0),

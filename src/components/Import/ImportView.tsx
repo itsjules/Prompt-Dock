@@ -15,6 +15,8 @@ export const ImportView: React.FC = () => {
     const [skipModalOpen, setSkipModalOpen] = useState(false);
     const [skipContent, setSkipContent] = useState('');
     const [skipSource, setSkipSource] = useState<{ type: 'text' | 'file'; filename?: string } | null>(null);
+    const [skipTags, setSkipTags] = useState<string[]>([]);
+    const [skipTagInput, setSkipTagInput] = useState('');
 
     useEffect(() => {
         return () => {
@@ -162,6 +164,56 @@ export const ImportView: React.FC = () => {
                                 id="full-prompt-description"
                             />
                         </div>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Tags</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                {skipTags.map((tag, idx) => (
+                                    <span
+                                        key={idx}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '0.25rem',
+                                            padding: '0.25rem 0.5rem',
+                                            backgroundColor: 'var(--accent-primary)',
+                                            color: 'white',
+                                            borderRadius: 'var(--radius-sm)',
+                                            fontSize: '0.75rem',
+                                            cursor: 'pointer',
+                                        }}
+                                        onClick={() => setSkipTags(skipTags.filter((_, i) => i !== idx))}
+                                    >
+                                        {tag} ×
+                                    </span>
+                                ))}
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Type and press Enter..."
+                                value={skipTagInput}
+                                onChange={(e) => setSkipTagInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && skipTagInput.trim()) {
+                                        e.preventDefault();
+                                        const trimmed = skipTagInput.trim();
+                                        if (!skipTags.includes(trimmed)) {
+                                            setSkipTags([...skipTags, trimmed]);
+                                        }
+                                        setSkipTagInput('');
+                                    } else if (e.key === 'Backspace' && !skipTagInput && skipTags.length > 0) {
+                                        setSkipTags(skipTags.slice(0, -1));
+                                    }
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: '1px solid var(--border-color)',
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
+                                }}
+                            />
+                        </div>
                         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
                             <button
                                 className="import-button import-button-secondary"
@@ -169,6 +221,8 @@ export const ImportView: React.FC = () => {
                                     setSkipModalOpen(false);
                                     setSkipContent('');
                                     setSkipSource(null);
+                                    setSkipTags([]);
+                                    setSkipTagInput('');
                                 }}
                             >
                                 Cancel
@@ -192,13 +246,15 @@ export const ImportView: React.FC = () => {
                                         blocks: [],
                                         isFullPrompt: true,
                                         fullPromptContent: skipContent,
-                                        tags: { style: [], topic: [], technique: [] },
+                                        tags: { style: skipTags, topic: [], technique: [] },
                                         importedFrom: skipSource?.filename || 'pasted text',
                                         importedAt: new Date().toISOString(),
                                     });
 
                                     clearSession();
                                     setSkipModalOpen(false);
+                                    setSkipTags([]);
+                                    setSkipTagInput('');
                                     setActiveView('library');
                                 }}
                             >
