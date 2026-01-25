@@ -186,6 +186,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
         // (unless we decide "clearing" implies deletion for unsaved blocks).
         // For safety, we just detach them.
         set({
+            activePromptId: null, // FULL RESET: No active prompt context anymore
             currentBlockIds: [],
             // Reset metadata for new prompt on clear
             draftMetadata: DEFAULT_METADATA,

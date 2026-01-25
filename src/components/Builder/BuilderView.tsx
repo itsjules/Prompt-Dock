@@ -379,9 +379,14 @@ export const BuilderView = () => {
 
 
     const handleDeleteBlockFromCanvas = (id: string) => {
-        removeBlockId(id);
-        // Also clear local edits
-        removeLocalBlockEdit(id);
+        // If this is the last block, completely clear the builder to reset state to "New Prompt"
+        if (currentBlockIds.length === 1 && currentBlockIds[0] === id) {
+            clearBuilder();
+        } else {
+            removeBlockId(id);
+            // Also clear local edits
+            removeLocalBlockEdit(id);
+        }
     };
 
     const handleMoveBlockInCanvas = (id: string, direction: 'up' | 'down') => {
