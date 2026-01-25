@@ -50,18 +50,18 @@ export const Layout = ({ children }: LayoutProps) => {
                             <Library size={20} />
                         </button>
                         <button
-                            className={`dock-item ${activeView === 'builder' ? 'active' : ''}`}
-                            onClick={() => setActiveView('builder')}
-                            title="Builder"
-                        >
-                            <Layers size={20} />
-                        </button>
-                        <button
                             className={`dock-item ${activeView === 'import' ? 'active' : ''}`}
                             onClick={() => setActiveView('import')}
                             title="Import"
                         >
                             <Download size={20} />
+                        </button>
+                        <button
+                            className={`dock-item ${activeView === 'builder' ? 'active' : ''}`}
+                            onClick={() => setActiveView('builder')}
+                            title="Builder"
+                        >
+                            <Layers size={20} />
                         </button>
                         <button
                             className={`dock-item ${activeView === 'settings' ? 'active' : ''}`}
