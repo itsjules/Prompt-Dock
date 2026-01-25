@@ -35,7 +35,6 @@ const getRelativeTime = (isoString: string) => {
 };
 
 const BLOCK_TYPES: BlockType[] = ['Role', 'Task', 'Context', 'Output', 'Style', 'Constraints'];
-const SPECIAL_CATEGORIES = ['Full Prompts', 'Unnamed'] as const; // Special categories that aren't block types
 
 // Map block types to icons
 const TYPE_ICONS: Record<BlockType, React.ElementType> & Record<string, React.ElementType> = {
@@ -432,9 +431,18 @@ export const BuilderView = () => {
 
     // Analyze current prompt composition for missing/beneficial blocks
     const analyzePrompt = useMemo(() => {
-        const blockTypes = currentBlockIds
-            .map(id => blocksMap[id]?.type)
+        const blocks = currentBlockIds
+            .map(id => blocksMap[id])
             .filter(Boolean);
+
+        const hasFullPrompt = blocks.some(b => b?.isFullPrompt);
+
+        // If any block is a monolithic full prompt, skip heuristics
+        if (hasFullPrompt) {
+            return { warnings: [], suggestions: [], hasIssues: false };
+        }
+
+        const blockTypes = blocks.map(b => b.type);
 
         const hasRole = blockTypes.includes('Role');
         const hasTask = blockTypes.includes('Task');
@@ -599,8 +607,8 @@ export const BuilderView = () => {
                                 <div className="pane-header">
                                     <h3>Categories</h3>
                                 </div>
-                                <div className="category-list">
-                                    {[...BLOCK_TYPES, ...customCategories.map(c => c.name), ...SPECIAL_CATEGORIES].map(type => {
+                                <div className="category-list" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                                    {['Full Prompts', ...BLOCK_TYPES, ...customCategories.map(c => c.name)].map(type => {
                                         const Icon = getCategoryIcon(type);
                                         const isCustom = customCategories.some(c => c.name === type);
                                         return (
@@ -643,6 +651,19 @@ export const BuilderView = () => {
                                             </div>
                                         );
                                     })}
+                                    {/* Unnamed category pushed to bottom */}
+                                    <div className="category-tab-wrapper" style={{ marginTop: 'auto' }}>
+                                        <button
+                                            className={`category-tab ${selectedCategory === 'Unnamed' ? 'active' : ''}`}
+                                            onClick={() => {
+                                                setSelectedCategory('Unnamed' as any);
+                                                setIsCreatingBlock(false);
+                                            }}
+                                        >
+                                            <HelpCircle size={16} />
+                                            <span>Unnamed</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 {/* Footer / Add Category Button */}
                                 <div className="pane-categories-footer">
@@ -727,7 +748,7 @@ export const BuilderView = () => {
                                             }}>
                                                 <FileText size={16} style={{ flexShrink: 0, marginTop: '0.125rem' }} />
                                                 <span>
-                                                    Monolithic prompts saved as single units. Add to canvas to use or edit.
+                                                    All saved prompts (Monolithic & Composed). Add to canvas to use or edit.
                                                 </span>
                                             </div>
                                             {getFullPrompts().length === 0 ? (
@@ -744,30 +765,40 @@ export const BuilderView = () => {
                                                                 backgroundColor: 'var(--bg-tertiary)',
                                                                 borderRadius: 'var(--radius-md)',
                                                                 border: '1px solid var(--border-color)',
-                                                                cursor: 'pointer',
+                                                                position: 'relative',
                                                             }}
                                                         >
-                                                            <div style={{ marginBottom: '0.5rem' }}>
-                                                                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{prompt.title}</div>
+                                                            <button
+                                                                className="icon-btn-ghost"
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    top: '1rem',
+                                                                    right: '1rem',
+                                                                    padding: '0.25rem',
+                                                                    minWidth: 'unset',
+                                                                }}
+                                                                onClick={() => {
+                                                                    const { loadPrompt, loadFullPrompt } = useBuilderStore.getState();
+                                                                    const { setActiveView } = useUIStore.getState();
+                                                                    if (prompt.isFullPrompt) {
+                                                                        loadFullPrompt(prompt);
+                                                                    } else {
+                                                                        loadPrompt(prompt);
+                                                                    }
+                                                                    setActiveView('builder');
+                                                                }}
+                                                                title="Add to Canvas"
+                                                            >
+                                                                <Plus size={16} />
+                                                            </button>
+                                                            <div style={{ marginBottom: '0.5rem', paddingRight: '2rem' }}>
+                                                                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>{prompt.title}</div>
                                                                 {prompt.description && (
-                                                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                                                         {prompt.description}
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                            <button
-                                                                className="icon-btn-ghost"
-                                                                style={{ fontSize: '0.875rem' }}
-                                                                onClick={() => {
-                                                                    const { loadFullPrompt } = useBuilderStore.getState();
-                                                                    const { setActiveView } = useUIStore.getState();
-                                                                    loadFullPrompt(prompt);
-                                                                    setActiveView('builder');
-                                                                }}
-                                                            >
-                                                                <Plus size={14} />
-                                                                <span>Add to Canvas</span>
-                                                            </button>
                                                         </div>
                                                     ))}
                                                 </div>

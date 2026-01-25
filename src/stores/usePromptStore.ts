@@ -97,7 +97,7 @@ export const usePromptStore = create<PromptStore>((set, get) => ({
     getAllPrompts: () => Object.values(get().prompts),
 
     getFullPrompts: () =>
-        Object.values(get().prompts).filter((prompt) => prompt.isFullPrompt),
+        Object.values(get().prompts), // Return ALL prompts, not just isFullPrompt ones
 
     getFavorites: () =>
         Object.values(get().prompts).filter((prompt) => prompt.isFavorite),
