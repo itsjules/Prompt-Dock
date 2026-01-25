@@ -192,6 +192,8 @@ export const BuilderView = () => {
     }, [categoryBlocks, pickerSearch, filterFavorites]);
 
     const [isCopied, setIsCopied] = useState(false);
+    const [showHeuristics, setShowHeuristics] = useState(false);
+
 
     // --- Actions ---
 
@@ -412,6 +414,37 @@ export const BuilderView = () => {
         .filter(Boolean)
         .filter(content => content && content.trim().length > 0)
         .join('\n\n');
+
+    // Analyze current prompt composition for missing/beneficial blocks
+    const analyzePrompt = useMemo(() => {
+        const blockTypes = currentBlockIds
+            .map(id => blocksMap[id]?.type)
+            .filter(Boolean);
+
+        const hasRole = blockTypes.includes('Role');
+        const hasTask = blockTypes.includes('Task');
+        const hasOutput = blockTypes.includes('Output');
+        const hasConstraints = blockTypes.includes('Constraints');
+
+
+        const warnings: string[] = [];
+        const suggestions: string[] = [];
+
+        // Critical checks - only Task is critical
+        if (!hasTask) warnings.push('Missing Task block - specify what you want the AI to do');
+
+        // Beneficial suggestions (only if prompt has some content)
+        if (currentBlockIds.length > 0) {
+            if (!hasRole) suggestions.push('Consider adding Role block to define who the AI should act as');
+            if (!hasOutput) suggestions.push('Consider adding Output block to specify response format');
+            if (!hasConstraints && currentBlockIds.length >= 3) {
+                suggestions.push('Consider adding Constraints block to set boundaries');
+            }
+        }
+
+        return { warnings, suggestions, hasIssues: warnings.length > 0 || suggestions.length > 0 };
+    }, [currentBlockIds, blocksMap]);
+
 
     const handleCopyPreview = () => {
         navigator.clipboard.writeText(livePreview);
@@ -871,13 +904,41 @@ export const BuilderView = () => {
                                     </>
                                 )}
                             </button>
-                            <button
-                                className={`footer-btn primary ${isCopied ? 'success' : ''}`}
-                                onClick={handleCopyPreview}
+                            <div
+                                style={{ position: 'relative' }}
+                                onMouseEnter={() => setShowHeuristics(true)}
+                                onMouseLeave={() => setShowHeuristics(false)}
                             >
-                                {isCopied ? <Check size={16} /> : <Copy size={16} />}
-                                {isCopied ? 'Copied!' : 'Copy'}
-                            </button>
+                                <button
+                                    className={`footer-btn primary ${isCopied ? 'success' : ''}`}
+                                    onClick={handleCopyPreview}
+                                    disabled={currentBlockIds.length === 0}
+                                >
+                                    {isCopied ? <Check size={16} /> : <Copy size={16} />}
+                                    {isCopied ? 'Copied!' : 'Copy'}
+                                </button>
+
+                                {showHeuristics && analyzePrompt.hasIssues && (
+                                    <div className="heuristics-tooltip">
+                                        {analyzePrompt.warnings.length > 0 && (
+                                            <div className="heuristics-section warnings">
+                                                <div className="heuristics-header">⚠️ Missing Critical Blocks</div>
+                                                {analyzePrompt.warnings.map((w, i) => (
+                                                    <div key={i} className="heuristics-item">{w}</div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {analyzePrompt.suggestions.length > 0 && (
+                                            <div className="heuristics-section suggestions">
+                                                <div className="heuristics-header">💡 Suggestions</div>
+                                                {analyzePrompt.suggestions.map((s, i) => (
+                                                    <div key={i} className="heuristics-item">{s}</div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
