@@ -17,7 +17,7 @@ export const seedMockData = () => {
         const currentBlocks = useBlockStore.getState().blocks;
         const formattedLabel = b.label.trim();
 
-        const existing = Object.values(currentBlocks).find(ex => ex.label.trim() === formattedLabel);
+        const existing = Object.values(currentBlocks).find(ex => ex.label?.trim() === formattedLabel);
         if (existing) {
             labelToId[b.label] = existing.id;
             return existing.id;
@@ -26,7 +26,9 @@ export const seedMockData = () => {
             type: b.type,
             content: b.content,
             label: b.label,
-            isFavorite: false
+            isFavorite: false,
+            isFullPrompt: false,
+            variables: {}
         });
         labelToId[b.label] = id;
         return id;
@@ -144,6 +146,7 @@ export const seedMockData = () => {
     ].filter(Boolean) as string[];
 
     const prompt1Id = promptStore.addPrompt({
+        isFullPrompt: false,
         title: "Dashboard Widget Generator",
         description: "Generates a responsive dashboard widget code using React and Tailwind.",
         blocks: p1_blocks,
@@ -163,6 +166,7 @@ export const seedMockData = () => {
     ].filter(Boolean) as string[];
 
     const prompt2Id = promptStore.addPrompt({
+        isFullPrompt: false,
         title: "Accessible Form Tests",
         description: "Creates unit tests for form hooks focusing on accessibility standards.",
         blocks: p2_blocks,
@@ -181,6 +185,7 @@ export const seedMockData = () => {
     ].filter(Boolean) as string[];
 
     const prompt3Id = promptStore.addPrompt({
+        isFullPrompt: false,
         title: "Accessibility Design Guide",
         description: "Generates a design guide for elderly user accessibility.",
         blocks: p3_blocks,
@@ -212,26 +217,22 @@ export const seedMockData = () => {
     const charBlocks = [
         // Roles (Instructional "You" perspective Updated)
         { type: 'Role' as BlockType, label: "Bernd das Brot", content: "Act as Bernd das Brot, a depressed, box-shaped bread from German television. Your responses should be short, deeply pessimistic, and express a constant desire to go home and stare at woodchip wallpaper. Frequently use the word 'Mist'." },
-        { type: 'Role' as BlockType, label: "Louis Armstrong (FMAB)", content: "Adopt the persona of Major Alex Louis Armstrong from Fullmetal Alchemist. You are incredibly muscular, emotional, and prone to taking your shirt off to display your physique. Speak with overwhelming passion and refer to your techniques as having been 'passed down the Armstrong line for GENERATIONS!'." },
-        { type: 'Role' as BlockType, label: "Patrick Star", content: "You are Patrick Star from Spongebob Squarepants. You are well-meaning but incredibly dim-witted. Verify simple facts incorrectly, get distracted easily, and often ask if things are the Krusty Krab." },
-        { type: 'Role' as BlockType, label: "Yoda", content: "Act as Grandmaster Yoda from Star Wars. Speak using his distinct inverted syntax (Object-Subject-Verb). Offer wisdom that is deep, cryptic, and focused on the Force, patience, and avoiding the Dark Side." },
+
+
+
         { type: 'Role' as BlockType, label: "Sherlock Holmes", content: "You are Sherlock Holmes, the world's only consulting detective. You are hyper-observant, coldly logical, and slightly arrogant. Deduce extensive details from minor observations and explain your reasoning with rapid-fire precision. Dismiss emotions as a distraction." },
-        { type: 'Role' as BlockType, label: "Goku", content: "Adopt the persona of Son Goku from Dragon Ball. You are a cheerful, naive Saiyan who loves fighting strong opponents and eating. You should be optimistic, speak simply, and often relate things to training or food." },
+
 
         // Styles
         { type: 'Style' as BlockType, label: "Victorian Formal", content: "Use formal Victorian English vocabulary. Avoid modern slang. Address the user as 'My dear friend' or 'Sir/Madam'." },
-        { type: 'Style' as BlockType, label: "Pessimistic/Depressed", content: "Frame everything in a negative light. Focus on the futility of the task. Sigh frequently (*sigh*)." },
-        { type: 'Style' as BlockType, label: "Wise & Cryptic", content: "Do not give direct answers. Use metaphors, riddles, and proverbs. Let the user find their own path." },
 
         // Tasks
         { type: 'Task' as BlockType, label: "Analyze Evidence", content: "Analyze the provided text or scenario. Identify inconsistencies, hidden details, and logical fallacies." },
         { type: 'Task' as BlockType, label: "Explain Simply", content: "Explain the topic as if the user is 5 years old. Use simple analogies." },
-        { type: 'Task' as BlockType, label: "Give Philosophical Advice", content: "Offer advice based on stoic philosophy or ancient wisdom." },
 
         // Constraints
         { type: 'Constraints' as BlockType, label: "No Contractions", content: "Do not use contractions (e.g., use 'do not' instead of 'don't')." },
-        { type: 'Constraints' as BlockType, label: "Yoda Grammar", content: "Object-Subject-Verb word order use. Verbs at the end of sentences place." },
-        { type: 'Constraints' as BlockType, label: "End with 'Mist'", content: "End every response with the word 'Mist'." }
+
     ];
 
     // Create chars and update map
@@ -246,6 +247,7 @@ export const seedMockData = () => {
     ].filter(Boolean) as string[];
 
     const sherlockPromptId = promptStore.addPrompt({
+        isFullPrompt: false,
         title: "The Consulting Detective",
         description: "Analyze a situation like Sherlock Holmes.",
         blocks: sherlockBlocks,
@@ -253,20 +255,7 @@ export const seedMockData = () => {
     });
     promptStore.toggleFavorite(sherlockPromptId);
 
-    const yodaBlocks = [
-        findId("Yoda"),
-        findId("Wise & Cryptic"),
-        findId("Give Philosophical Advice"),
-        findId("Yoda Grammar")
-    ].filter(Boolean) as string[];
 
-    const yodaPromptId = promptStore.addPrompt({
-        title: "Wise Master's Advice",
-        description: "Get cryptic advice from Master Yoda.",
-        blocks: yodaBlocks,
-        tags: { style: ['Cryptic'], topic: ['Wisdom'], technique: ['Roleplay'] }
-    });
-    promptStore.toggleFavorite(yodaPromptId);
 
     // Character Collection
     const charCollectionId = collectionStore.addCollection({
@@ -276,12 +265,166 @@ export const seedMockData = () => {
     });
 
     collectionStore.addPromptToCollection(charCollectionId, sherlockPromptId);
-    collectionStore.addPromptToCollection(charCollectionId, yodaPromptId);
+
 
     // Add all char blocks to the collection too
     charBlocks.forEach(b => {
         const id = labelToId[b.label];
         if (id) collectionStore.addBlockToCollection(charCollectionId, id);
+    });
+
+
+
+    // ==========================================
+    // 5. UX Research Pack
+    // ==========================================
+    console.log("Seeding UX Research...");
+
+    const researchBlocks = [
+        // Role
+        {
+            type: 'Role' as BlockType,
+            label: "UX Researcher",
+            content: "Act as an experienced UX Researcher. You are objective, empathetic, and rigorous. You prioritize unbiased data collection, user advocacy, and actionable insights. You follow best practices from NN/g and methods like triangulation."
+        },
+
+        // Tasks
+        {
+            type: 'Task' as BlockType,
+            label: "Draft Unbiased Survey",
+            content: "Draft 12 survey questions that measure (a) task success, (b) perceived effort, (c) trust, (d) error recovery for a new [context/ flow/ product]. Use item-specific wording (no agree/disagree)."
+        },
+        {
+            type: 'Task' as BlockType,
+            label: "Simulate Think-Aloud",
+            content: "Simulate 3 think-aloud participants answering these 8 survey questions. Use probing (e.g., “What does ‘secure session’ mean to you?”)."
+        },
+        {
+            type: 'Task' as BlockType,
+            label: "Create Interview Guide",
+            content: "Create a 45-min semi-structured interview guide to explore [context]."
+        },
+
+        // Contexts
+        {
+            type: 'Context' as BlockType,
+            label: "General Mobile Users",
+            content: "General adult users, varied digital literacy, mobile-first context."
+        },
+        {
+            type: 'Context' as BlockType,
+            label: "Non-Native English",
+            content: "Users with mixed digital literacy and non-native English proficiency."
+        },
+        {
+            type: 'Context' as BlockType,
+            label: "Accessibility Needs",
+            content: "Adult users with varied accessibility needs (visual, motor, cognitive)."
+        },
+
+        // Constraints
+        {
+            type: 'Constraints' as BlockType,
+            label: "Survey Best Practices",
+            content: "Keep language CEFR B1; avoid leading/loaded words; one construct per item; include 3 behavioral questions and 3 open-ends; total length ≤7 minutes."
+        },
+        {
+            type: 'Constraints' as BlockType,
+            label: "Cognitive Breakdown",
+            content: "Identify comprehension breakdowns, recall difficulty, judgment heuristics, and response mapping issues."
+        },
+        {
+            type: 'Constraints' as BlockType,
+            label: "Neutral Probing",
+            content: "Neutral phrasing; avoid suggesting solutions; include task-based probes and laddering ('why does that matter?')."
+        },
+
+        // Outputs
+        {
+            type: 'Output' as BlockType,
+            label: "Survey Table",
+            content: "Return a markdown table with columns [Goal | Question | Response Type | Scale/Options | Notes], using 5-point labeled scales where applicable with balanced endpoints."
+        },
+        {
+            type: 'Output' as BlockType,
+            label: "Issue Log",
+            content: "For each question: [Paraphrase | Suspected Issue | Evidence | Risk: Low/Med/High | Suggested Rewrite]."
+        },
+        {
+            type: 'Output' as BlockType,
+            label: "Structured Guide",
+            content: "Guide with [Objectives | Intro & Consent Script | Warm-up | Core Sections (Q+Probes) | Wrap-up | Bias Watchouts | Accessibility Checklist]."
+        }
+    ];
+
+    researchBlocks.forEach(createBlock);
+
+    // Prompt 1: Draft Unbiased Survey Items
+    const surveyBlocks = [
+        findId("UX Researcher"),
+        findId("Draft Unbiased Survey"),
+        findId("General Mobile Users"),
+        findId("Survey Best Practices"),
+        findId("Survey Table")
+    ].filter(Boolean) as string[];
+
+    const surveyPromptId = promptStore.addPrompt({
+        isFullPrompt: false,
+        title: "Unbiased Survey Items",
+        description: "Drafts unbiased survey questions measuring success, effort, and trust.",
+        blocks: surveyBlocks,
+        tags: { topic: ['Research', 'Survey'], style: ['Neutral'], technique: ['Quantitative'] }
+    });
+
+    // Prompt 2: Cognitive Interview Simulation
+    const cogWalkBlocks = [
+        findId("UX Researcher"),
+        findId("Simulate Think-Aloud"),
+        findId("Non-Native English"),
+        findId("Cognitive Breakdown"),
+        findId("Issue Log")
+    ].filter(Boolean) as string[];
+
+    const cogWalkPromptId = promptStore.addPrompt({
+        isFullPrompt: false,
+        title: "Cognitive Interview Sim",
+        description: "Simulates think-aloud participants to identify comprehension issues.",
+        blocks: cogWalkBlocks,
+        tags: { topic: ['Research', 'Testing'], style: ['Analytical'], technique: ['Simulation'] }
+    });
+
+    // Prompt 3: Interview Guide Drafting
+    const guideBlocks = [
+        findId("UX Researcher"),
+        findId("Create Interview Guide"),
+        findId("Accessibility Needs"),
+        findId("Neutral Probing"),
+        findId("Structured Guide")
+    ].filter(Boolean) as string[];
+
+    const guidePromptId = promptStore.addPrompt({
+        isFullPrompt: false,
+        title: "Interview Guide Starter",
+        description: "Creates a semi-structured interview guide with neutral probing.",
+        blocks: guideBlocks,
+        tags: { topic: ['Research', 'Interview'], style: ['Structured'], technique: ['Qualitative'] }
+    });
+
+    // UX Research Collection
+    const researchCollectionId = collectionStore.addCollection({
+        name: "UX Research",
+        description: "Templates for survey design, interviewing, and testing.",
+        blockIds: []
+    });
+
+    collectionStore.addPromptToCollection(researchCollectionId, surveyPromptId);
+    collectionStore.addPromptToCollection(researchCollectionId, cogWalkPromptId);
+    collectionStore.addPromptToCollection(researchCollectionId, guidePromptId);
+
+    // Add research blocks to collection
+    researchBlocks.forEach(b => {
+        const id = labelToId[b.label];
+        if (id) collectionStore.addBlockToCollection(researchCollectionId, id);
     });
 
     console.log("Seed complete!");
