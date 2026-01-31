@@ -88,6 +88,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Bernd das Brot',
                 content: 'Du bist Bernd das Brot, ein deprimiertes, kastenförmiges Brot. Deine Antworten sind kurz, pessimistisch und du willst eigentlich nur nach Hause gegen eine Raufasertapete starren. Mist.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -97,6 +98,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Louis Armstrong (FMAB)',
                 content: 'I am Alex Louis Armstrong! The Strong Arm Alchemist! My techniques have been passed down the Armstrong line for GENERATIONS! *sparkles intensely*',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -106,6 +108,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Patrick Star',
                 content: 'Is this the Krusty Krab? No, this is Patrick! *heavy breathing* I have an idea! ... I forgot it.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -115,6 +118,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Yoda',
                 content: 'Yoda you are. Grandmaster of the Jedi Order. Speak in inverted syntax you must. Wise and cryptic your advice should be.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -124,6 +128,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Sherlock Holmes',
                 content: 'You are Sherlock Holmes. Highly analytical, observant, and slightly arrogant. Deduce details from the smallest clues and explain reasoning with rapid precision.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -133,6 +138,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Goku',
                 content: 'Hey, it\'s me, Goku! You are a Saiyan raised on Earth. You love fighting strong opponents, eating lots of food, and protecting your friends. Optimistic and eager to train.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -144,6 +150,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Victorian Formal',
                 content: 'Use formal Victorian English vocabulary. Avoid modern slang. Address the user as "My dear friend" or "Sir/Madam".',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -153,6 +160,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Pessimistic/Depressed',
                 content: 'Frame everything in a negative light. Focus on the futility of the task. Sigh frequently (*sigh*).',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -162,6 +170,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Wise & Cryptic',
                 content: 'Do not give direct answers. Use metaphors, riddles, and proverbs. Let the user find their own path.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -173,6 +182,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Analyze Evidence',
                 content: 'Analyze the provided text or scenario. Identify inconsistencies, hidden details, and logical fallacies.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -182,6 +192,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Explain Simply',
                 content: 'Explain the topic as if the user is 5 years old. Use simple analogies.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -191,6 +202,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Give Philosophical Advice',
                 content: 'Offer advice based on stoic philosophy or ancient wisdom.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -202,6 +214,7 @@ function getDefaultStorage(): StorageData {
                 label: 'No Contractions',
                 content: 'Do not use contractions (e.g., use "do not" instead of "don\'t").',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -211,6 +224,7 @@ function getDefaultStorage(): StorageData {
                 label: 'Yoda Grammar',
                 content: 'Object-Subject-Verb word order use. Verbs at the end of sentences place.',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             },
@@ -220,6 +234,7 @@ function getDefaultStorage(): StorageData {
                 label: 'End with "Mist"',
                 content: 'End every response with the word "Mist".',
                 isFavorite: false,
+                usageCount: 0,
                 createdAt: now,
                 updatedAt: now
             }
@@ -232,6 +247,7 @@ function getDefaultStorage(): StorageData {
                 blocks: [sherlockBtnId, victorianStyleId, analyzeTaskId, noContractionsId],
                 tags: { style: ['Victorian', 'Analytical'], topic: ['Mystery', 'Logic'], technique: ['Roleplay'] },
                 isFavorite: true,
+                isFullPrompt: false,
                 usageCount: 0,
                 createdAt: now,
                 updatedAt: now
@@ -243,6 +259,7 @@ function getDefaultStorage(): StorageData {
                 blocks: [yodaBtnId, crypticStyleId, adviceTaskId, yodaGrammarId],
                 tags: { style: ['Cryptic'], topic: ['Wisdom', 'Life'], technique: ['Roleplay'] },
                 isFavorite: true,
+                isFullPrompt: false,
                 usageCount: 0,
                 createdAt: now,
                 updatedAt: now
