@@ -14,7 +14,7 @@ interface ImportStore {
     historyIndex: number;
 
     // Session management
-    startImport: (source: ImportSource, metadata?: { title?: string; description?: string; tags?: string[] }) => void;
+    startImport: (source: ImportSource, metadata?: { title?: string; description?: string; tags?: string[] }, originalPromptId?: string) => void;
     clearSession: () => void;
 
     // Dissection
@@ -66,12 +66,13 @@ export const useImportStore = create<ImportStore>((set, get) => ({
         });
     },
 
-    startImport: (source, metadata) => {
+    startImport: (source, metadata, originalPromptId) => {
         const session: ImportSession = {
             id: uuidv4(),
             source,
             blocks: [],
             originalText: source.content,
+            originalPromptId, // Store the ID
             metadata: {
                 promptTitle: metadata?.title || (source.filename
                     ? source.filename.replace(/\.(txt|md|pdf)$/i, '')

@@ -58,6 +58,7 @@ export const ImportSessionSchema = z.object({
         promptDescription: z.string().optional(),
         tags: z.array(z.string()).default([]),
     }).optional(),
+    originalPromptId: z.string().optional(), // Track origin for updates
     stage: z.enum(['input', 'dissection', 'review', 'complete']).default('input'),
     createdAt: z.string().datetime(),
 });

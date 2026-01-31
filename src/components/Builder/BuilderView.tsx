@@ -1032,7 +1032,9 @@ export const BuilderView = () => {
                                                                                 ...(originalPrompt.tags.topic || []),
                                                                                 ...(originalPrompt.tags.technique || [])
                                                                             ] : []
-                                                                        });
+                                                                        },
+                                                                            activePromptId // Pass original ID!
+                                                                        );
                                                                         // Trigger auto-dissection to skip input step
                                                                         setTimeout(() => dissectPrompt(), 100);
                                                                         setActiveView('import');

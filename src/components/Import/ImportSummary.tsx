@@ -76,23 +76,51 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
                 }
             });
 
-            // Save prompt with named block IDs and unnamed blocks inline
-            const newPromptId = addPrompt({
-                title: promptTitle,
-                description: promptDescription,
-                blocks: finalBlocksSequence,
-                // inlineBlocks: [], // No longer needed
-                isFullPrompt: false,
-                tags: {
-                    style: [],
-                    topic: tags,
-                    technique: [],
-                },
-                importedFrom: source.filename || 'pasted text',
-                importedAt: new Date().toISOString(),
-            });
 
-            return newPromptId;
+
+            // 5. Save logic: Update Existing vs Create New
+            let resultPromptId: string | null = null;
+
+            // Check if we are updating an existing prompt (and title matches, implies intent to stay same)
+            // But even if title changed, if we have originalPromptId, we should probably update it unless we want "Save As" behavior?
+            // "Save to Library" usually means "Save". If it was an edit of X, it should update X.
+            // If the user wants a copy, they can duplicate it later.
+            // However, the Import flow is a bit detached. 
+            // Let's assume Update behavior if ID exists.
+
+            if (currentSession.originalPromptId && getPrompt(currentSession.originalPromptId)) {
+                // UPDATE existing prompt
+                const existingId = currentSession.originalPromptId;
+                usePromptStore.getState().updatePrompt(existingId, {
+                    title: promptTitle,
+                    description: promptDescription,
+                    blocks: finalBlocksSequence,
+                    tags: {
+                        style: [],
+                        topic: tags,
+                        technique: [],
+                    },
+                    isFullPrompt: false // Ensure it's treated as a composed prompt now
+                });
+                resultPromptId = existingId;
+            } else {
+                // CREATE new prompt
+                resultPromptId = addPrompt({
+                    title: promptTitle,
+                    description: promptDescription,
+                    blocks: finalBlocksSequence,
+                    isFullPrompt: false,
+                    tags: {
+                        style: [],
+                        topic: tags,
+                        technique: [],
+                    },
+                    importedFrom: source.filename || 'pasted text',
+                    importedAt: new Date().toISOString(),
+                });
+            }
+
+            return resultPromptId;
         } catch (error) {
             console.error('Failed to save import:', error);
             alert('Failed to save imported prompt. Please try again.');
