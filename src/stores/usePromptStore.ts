@@ -97,70 +97,60 @@ export const usePromptStore = create<PromptStore>((set, get) => ({
             const blockStore = useBlockStore.getState();
             const allPrompts = Object.values(state.prompts).filter(p => p.id !== id); // Exclude current
 
-            // Collect IDs of blocks in this prompt that are candidates for deletion (Unnamed blocks)
-            const candidateBlockIds = new Set<string>();
-
-            // Helper to check if a block ID is theoretically unnamed
-            const checkBlockId = (blockId: string) => {
-                const block = blockStore.blocks[blockId];
-                if (block && (!block.label || block.label.trim() === '')) {
-                    candidateBlockIds.add(blockId);
-                }
-            };
-
-            // Scan blocks array of the prompt being deleted
-            promptToDelete.blocks.forEach(item => {
-                if (typeof item === 'string') {
-                    // It's a direct ID reference
-                    checkBlockId(item);
-                } else {
-                    // It's an inline block object (unnamed)
-                    // Check if this block content exists in the store (hydrated by Builder/Import)
-                    const existingBlock = blockStore.checkDuplicates(item.content);
-                    if (existingBlock && (!existingBlock.label || existingBlock.label.trim() === '')) {
-                        // If found and unnamed, it's a candidate for deletion
-                        candidateBlockIds.add(existingBlock.id);
-                    }
-                }
-            });
-
-            // check legacy inlineBlocks if present
-            if (promptToDelete.inlineBlocks) {
-                promptToDelete.inlineBlocks.forEach(item => {
-                    const existingBlock = blockStore.checkDuplicates(item.content);
-                    if (existingBlock && (!existingBlock.label || existingBlock.label.trim() === '')) {
-                        candidateBlockIds.add(existingBlock.id);
-                    }
-                });
-            }
-
-            // 2. Check if these candidate blocks are used by ANY other prompt
+            // 1. Calculate usage from OTHER prompts to protect shared blocks
             const usedBlockIds = new Set<string>();
             allPrompts.forEach(p => {
                 p.blocks.forEach(item => {
                     if (typeof item === 'string') {
                         usedBlockIds.add(item);
-                    } else {
-                        // If other prompts use inline blocks, we should respect that too?
-                        // If another prompt has an inline block with SAME content, should we preserve the Store Block?
-                        // Yes, if checkDuplicates finds it, it means it's "used" in the abstract sense because 
-                        // that other prompt *would* hydrate/map to it.
-                        // However, inline blocks in other prompts are just data. They don't ID-ref the store.
-                        // So deleting the Store Block doesn't break the other prompt (it just loses the "hydrated" instance).
-                        // BUT: If the user has explicitly saved that block to "Unnamed" via another path, we should keep it?
-                        // "Unnamed" blocks in the store are fragile. 
-                        // Let's protect them only if explicitly referenced by ID in another prompt.
-                        // If another prompt has the same INLINE content, it will just re-hydrate a new one or find nothing.
                     }
                 });
             });
 
-            // 3. Delete blocks that are NOT used elsewhere
-            candidateBlockIds.forEach(blockId => {
-                if (!usedBlockIds.has(blockId)) {
-                    blockStore.deleteBlock(blockId);
+            // 2. Collect content tokens from the deleted prompt (for inline blocks)
+            const contentToClean = new Set<string>();
+            promptToDelete.blocks.forEach(item => {
+                if (typeof item === 'string') {
+                    // Check if this ID is unnamed and unused elsewhere
+                    const block = blockStore.blocks[item];
+                    if (block && (!block.label || block.label.trim() === '') && !usedBlockIds.has(item)) {
+                        blockStore.deleteBlock(item);
+                    }
+                } else {
+                    // It's an inline object, capture its content
+                    // We will search for ANY unnamed blocks with this content
+                    contentToClean.add(item.content.trim());
                 }
             });
+
+            // Handle legacy inline blocks
+            if (promptToDelete.inlineBlocks) {
+                promptToDelete.inlineBlocks.forEach(item => {
+                    contentToClean.add(item.content.trim());
+                });
+            }
+
+            // 3. Scan the ENTIRE block store for unnamed aliases/duplicates of the deleted inline content
+            if (contentToClean.size > 0) {
+                Object.values(blockStore.blocks).forEach(block => {
+                    // Criteria for deletion:
+                    // 1. It is unnamed
+                    // 2. It is NOT explicitly used by another prompt (ID reference)
+                    // 3. Its content matches one of the inline blocks we are deleting
+
+                    const isUnnamed = !block.label || block.label.trim() === '';
+
+                    if (isUnnamed && !usedBlockIds.has(block.id)) {
+                        const blockContent = block.content.trim();
+                        // Check exact content match via Set lookup (fast)
+                        // Or check similarity? For now, exact match of trimmed content is safest to avoid accidental deletions.
+                        // The reproduction showed exact match duplicates.
+                        if (contentToClean.has(blockContent)) {
+                            blockStore.deleteBlock(block.id);
+                        }
+                    }
+                });
+            }
         }
 
         // Finally delete the prompt itself
