@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
+import { useBlockStore } from './useBlockStore';
 import type { Prompt } from '../schemas/prompt.schema';
 
 interface PromptStore {
@@ -87,62 +88,83 @@ export const usePromptStore = create<PromptStore>((set, get) => ({
     },
 
     deletePrompt: (id) => {
-        set((state) => {
-            const promptToDelete = state.prompts[id];
-            if (!promptToDelete) return state;
+        // 1. Identify blocks used by this prompt that might need cleanup
+        const state = get();
+        const promptToDelete = state.prompts[id];
 
-            // 1. Identify blocks used by this prompt that might need cleanup
-            // We are looking for blocks that are effectively "owned" by this prompt (unnamed blocks)
-            // Since we store IDs for unnamed blocks now (reusing them), we need to check if they are used elsewhere.
+        if (promptToDelete) {
+            // Get block store synchronously
+            const blockStore = useBlockStore.getState();
+            const allPrompts = Object.values(state.prompts).filter(p => p.id !== id); // Exclude current
 
-            // Get useBlockStore to check block details
-            import('../stores/useBlockStore').then(({ useBlockStore }) => {
-                const blockStore = useBlockStore.getState();
-                const allPrompts = Object.values(state.prompts).filter(p => p.id !== id); // Exclude current
+            // Collect IDs of blocks in this prompt that are candidates for deletion (Unnamed blocks)
+            const candidateBlockIds = new Set<string>();
 
-                // Collect IDs of blocks in this prompt that are candidates for deletion (Unnamed blocks)
-                const candidateBlockIds = new Set<string>();
+            // Helper to check if a block ID is theoretically unnamed
+            const checkBlockId = (blockId: string) => {
+                const block = blockStore.blocks[blockId];
+                if (block && (!block.label || block.label.trim() === '')) {
+                    candidateBlockIds.add(blockId);
+                }
+            };
 
-                // Helper to check if a block ID is unnamed
-                const checkBlock = (blockId: string) => {
-                    const block = blockStore.blocks[blockId];
-                    if (block && (!block.label || block.label.trim() === '')) {
-                        candidateBlockIds.add(blockId);
+            // Scan blocks array of the prompt being deleted
+            promptToDelete.blocks.forEach(item => {
+                if (typeof item === 'string') {
+                    // It's a direct ID reference
+                    checkBlockId(item);
+                } else {
+                    // It's an inline block object (unnamed)
+                    // Check if this block content exists in the store (hydrated by Builder/Import)
+                    const existingBlock = blockStore.checkDuplicates(item.content);
+                    if (existingBlock && (!existingBlock.label || existingBlock.label.trim() === '')) {
+                        // If found and unnamed, it's a candidate for deletion
+                        candidateBlockIds.add(existingBlock.id);
                     }
-                };
+                }
+            });
 
-                // Scan mixed blocks array
-                promptToDelete.blocks.forEach(item => {
+            // check legacy inlineBlocks if present
+            if (promptToDelete.inlineBlocks) {
+                promptToDelete.inlineBlocks.forEach(item => {
+                    const existingBlock = blockStore.checkDuplicates(item.content);
+                    if (existingBlock && (!existingBlock.label || existingBlock.label.trim() === '')) {
+                        candidateBlockIds.add(existingBlock.id);
+                    }
+                });
+            }
+
+            // 2. Check if these candidate blocks are used by ANY other prompt
+            const usedBlockIds = new Set<string>();
+            allPrompts.forEach(p => {
+                p.blocks.forEach(item => {
                     if (typeof item === 'string') {
-                        checkBlock(item);
-                    }
-                    // Inline objects (objects in mixed array) don't have IDs in store usually? 
-                    // Wait, mixed array has {type, content} objects OR string IDs.
-                    // Objects are NOT in store. String IDs ARE in store.
-                    // So we only care about string IDs that point to unnamed blocks.
-                });
-
-                // Also check legacy inlineBlocks if any (though they usually don't have store IDs unless loaded?)
-                // Actually legacy inlineBlocks are just data, not IDs. So nothing to delete safely.
-
-                // 2. Check if these candidate blocks are used by ANY other prompt
-                const usedBlockIds = new Set<string>();
-                allPrompts.forEach(p => {
-                    p.blocks.forEach(item => {
-                        if (typeof item === 'string') {
-                            usedBlockIds.add(item);
-                        }
-                    });
-                });
-
-                // 3. Delete blocks that are NOT used elsewhere
-                candidateBlockIds.forEach(blockId => {
-                    if (!usedBlockIds.has(blockId)) {
-                        blockStore.deleteBlock(blockId);
+                        usedBlockIds.add(item);
+                    } else {
+                        // If other prompts use inline blocks, we should respect that too?
+                        // If another prompt has an inline block with SAME content, should we preserve the Store Block?
+                        // Yes, if checkDuplicates finds it, it means it's "used" in the abstract sense because 
+                        // that other prompt *would* hydrate/map to it.
+                        // However, inline blocks in other prompts are just data. They don't ID-ref the store.
+                        // So deleting the Store Block doesn't break the other prompt (it just loses the "hydrated" instance).
+                        // BUT: If the user has explicitly saved that block to "Unnamed" via another path, we should keep it?
+                        // "Unnamed" blocks in the store are fragile. 
+                        // Let's protect them only if explicitly referenced by ID in another prompt.
+                        // If another prompt has the same INLINE content, it will just re-hydrate a new one or find nothing.
                     }
                 });
             });
 
+            // 3. Delete blocks that are NOT used elsewhere
+            candidateBlockIds.forEach(blockId => {
+                if (!usedBlockIds.has(blockId)) {
+                    blockStore.deleteBlock(blockId);
+                }
+            });
+        }
+
+        // Finally delete the prompt itself
+        set((state) => {
             const { [id]: _, ...rest } = state.prompts;
             return { prompts: rest };
         });
@@ -180,27 +202,25 @@ export const usePromptStore = create<PromptStore>((set, get) => ({
     setPrompts: (prompts) => set({ prompts }),
 
     cleanupOrphanedBlocks: () => {
-        import('../stores/useBlockStore').then(({ useBlockStore }) => {
-            const blockStore = useBlockStore.getState();
-            const allPrompts = Object.values(get().prompts);
+        const blockStore = useBlockStore.getState();
+        const allPrompts = Object.values(get().prompts);
 
-            // 1. Collect ALL block IDs referenced by any prompt
-            const usedBlockIds = new Set<string>();
-            allPrompts.forEach(p => {
-                p.blocks.forEach(item => {
-                    if (typeof item === 'string') {
-                        usedBlockIds.add(item);
-                    }
-                });
-            });
-
-            // 2. Identify and delete unused UNNAMED blocks
-            Object.values(blockStore.blocks).forEach(block => {
-                // If block is unnamed AND not in the used list
-                if ((!block.label || block.label.trim() === '') && !usedBlockIds.has(block.id)) {
-                    blockStore.deleteBlock(block.id);
+        // 1. Collect ALL block IDs referenced by any prompt
+        const usedBlockIds = new Set<string>();
+        allPrompts.forEach(p => {
+            p.blocks.forEach(item => {
+                if (typeof item === 'string') {
+                    usedBlockIds.add(item);
                 }
             });
+        });
+
+        // 2. Identify and delete unused UNNAMED blocks
+        Object.values(blockStore.blocks).forEach(block => {
+            // If block is unnamed AND not in the used list
+            if ((!block.label || block.label.trim() === '') && !usedBlockIds.has(block.id)) {
+                blockStore.deleteBlock(block.id);
+            }
         });
     },
 }));
