@@ -202,6 +202,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
                                             updateBlock(block.id, { label: e.target.value });
                                         }}
                                         placeholder="Enter block name..."
+                                        onMouseDown={(e) => e.stopPropagation()}
                                     />
                                     <span style={{
                                         fontSize: '0.75rem',
@@ -248,6 +249,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
                             value={promptTitle}
                             onChange={(e) => setPromptTitle(e.target.value)}
                             placeholder="Enter prompt title..."
+                            onMouseDown={(e) => e.stopPropagation()}
                             style={{
                                 width: '100%',
                                 padding: '0.75rem',
@@ -276,6 +278,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
                             value={promptDescription}
                             onChange={(e) => setPromptDescription(e.target.value)}
                             placeholder="Add a description..."
+                            onMouseDown={(e) => e.stopPropagation()}
                             style={{
                                 width: '100%',
                                 flex: 1, // Fill remaining space in details column
@@ -321,6 +324,7 @@ export const ImportSummary: React.FC<ImportSummaryProps> = ({ onBack }) => {
                                 placeholder={tags.length === 0 ? "Type and press Enter..." : ""}
                                 className="import-tag-input-field"
                                 spellCheck={false}
+                                onMouseDown={(e) => e.stopPropagation()}
                             />
                         </div>
                     </div>

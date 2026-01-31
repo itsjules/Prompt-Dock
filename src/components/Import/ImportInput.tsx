@@ -107,6 +107,7 @@ export const ImportInput: React.FC<ImportInputProps> = ({ onNext, onSkip }) => {
                     onChange={handleTextChange}
                     disabled={selectedFile !== null}
                     spellCheck={false}
+                    onMouseDown={(e) => e.stopPropagation()}
                 />
                 {textInput && (
                     <div className="import-char-count">

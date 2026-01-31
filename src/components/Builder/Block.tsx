@@ -140,6 +140,7 @@ export const BlockComponent = ({
                             value={displayLabel}
                             onChange={(e) => onLabelUpdate(block.id, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
                             className="block-label-input"
                             style={{ color: headerContentColor }}
                             spellCheck={false}
@@ -212,6 +213,7 @@ export const BlockComponent = ({
                         spellCheck={false}
                         onChange={(e) => onUpdate && onUpdate(block.id, e.target.value)}
                         onClick={(e) => isEditable && e.stopPropagation()}
+                        onMouseDown={(e) => isEditable && e.stopPropagation()}
                         placeholder={`Enter ${block.type} here...`}
                         rows={autoExpandTextarea ? undefined : 3}
                         readOnly={!isEditable}
