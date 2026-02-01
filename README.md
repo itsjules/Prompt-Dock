@@ -9,9 +9,11 @@ PromptDock is a local, lightweight desktop tool designed for students and creato
 - **Import & Dissect:** Paste any prompt to break it down into reusable components. Or skip the dissection of the prompt if you dont need the blocks.
 - **Local & Private:** Your data stays on your machine—no accounts or cloud sync required.
 
+## Download for User Testing
+[**Download Latest Version for Windows & macOS**](https://github.com/itsjules/Prompt-Dock/releases/latest)
+
 ## Getting Started
-There will be release build links for Windows & MacOS soon (when the last storage bug is fixed)
-For now try it out over developer mode.
+To develop locally:
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (latest LTS recommended)
