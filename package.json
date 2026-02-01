@@ -5,7 +5,7 @@
     "url": "https://github.com/itsjules/Prompt-Dock.git"
   },
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.7",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -48,6 +48,11 @@
   "build": {
     "appId": "com.promptdock.app",
     "productName": "PromptDock",
+    "publish": {
+      "provider": "github",
+      "owner": "itsjules",
+      "repo": "Prompt-Dock"
+    },
     "directories": {
       "output": "release"
     },
