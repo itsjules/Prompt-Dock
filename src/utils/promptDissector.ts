@@ -242,48 +242,7 @@ export function dissectPrompt(text: string): DissectedBlock[] {
     return blocks;
 }
 
-/**
- * Generate a label for a block based on its content
- */
-function generateLabel(content: string, type: string): string {
-    // Remove markdown headings first
-    let cleaned = content.replace(/^#+\s*/gm, '');
 
-    // Remove common markers (both full and abbreviated forms)
-    cleaned = cleaned
-        .replace(/^(Task|Role|Actor|Context|Background|Output|Format|Style|Tone|Constraints|Rules)\s*:\s*/im, '')
-        .replace(/^[TARCO]:\s*/im, ''); // Remove T:, A:, R:, C:, O: markers
-
-    // Get first line or first sentence
-    const lines = cleaned.split('\n').filter(line => line.trim().length > 0);
-    if (lines.length === 0) return `${type} Block`;
-
-    let firstLine = lines[0].trim();
-
-    // If the first line is very short, try to include more context
-    if (firstLine.length < 20 && lines.length > 1) {
-        firstLine = lines.slice(0, 2).join(' ').trim();
-    }
-
-    // Truncate intelligently at sentence or word boundary
-    if (firstLine.length > 60) {
-        // Try to cut at a sentence boundary
-        const sentenceEnd = firstLine.substring(0, 60).lastIndexOf('.');
-        if (sentenceEnd > 30) {
-            return firstLine.substring(0, sentenceEnd + 1);
-        }
-
-        // Otherwise cut at word boundary
-        const lastSpace = firstLine.substring(0, 60).lastIndexOf(' ');
-        if (lastSpace > 30) {
-            return firstLine.substring(0, lastSpace) + '...';
-        }
-
-        return firstLine.substring(0, 57) + '...';
-    }
-
-    return firstLine || `${type} Block`;
-}
 
 /**
  * Analyze keywords in text to help determine block type

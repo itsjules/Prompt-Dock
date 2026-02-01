@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Plus, Edit2, Trash2, Check, User } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Check } from 'lucide-react';
 import { useRoleStore } from '../../stores/useRoleStore';
 import { Role } from '../../schemas/role.schema';
 import './RoleManagerModal.css';
