@@ -62,14 +62,6 @@
         "dmg"
       ],
       "icon": "resources/icon.png"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "icon": "resources/icon.png",
-      "category": "Development"
     }
   }
 }
