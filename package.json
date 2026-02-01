@@ -1,6 +1,9 @@
 {
   "name": "prompt-dock",
-  "repository": "github:itsjules/Prompt-Dock",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itsjules/Prompt-Dock.git"
+  },
   "private": true,
   "version": "0.1.0",
   "type": "module",
